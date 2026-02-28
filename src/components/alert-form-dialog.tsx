@@ -44,6 +44,7 @@ interface Props {
   courseId: string;
   courseName: string;
   bookingWindowDays?: number | null;
+  defaultDate?: string;
   /** If provided, form is in edit mode */
   existingAlert?: AlertData;
   onSaved?: () => void;
@@ -55,6 +56,7 @@ export function AlertFormDialog({
   courseId,
   courseName,
   bookingWindowDays,
+  defaultDate: defaultDateProp,
   existingAlert,
   onSaved,
 }: Props) {
@@ -68,10 +70,10 @@ export function AlertFormDialog({
   const defaultDate = tomorrow.toISOString().split("T")[0];
 
   const [form, setForm] = useState({
-    target_date: defaultDate,
+    target_date: defaultDateProp || defaultDate,
     earliest_time: "06:00",
     latest_time: "18:00",
-    min_players: "1",
+    min_players: "4",
     max_price: "",
     lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
     is_recurring: false,
@@ -344,34 +346,32 @@ export function AlertFormDialog({
           </div>
 
           {/* Lead time for delayed monitoring */}
-          {!form.is_recurring && (
-            <div className="grid gap-2">
-              <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
-                Start monitoring
-              </Label>
-              <div className="flex flex-wrap gap-1.5">
-                {LEAD_DAY_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => update("lead_days", opt.value)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                      form.lead_days === opt.value
-                        ? "bg-[var(--color-terracotta)] text-white"
-                        : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              {form.lead_days && (
-                <p className="text-xs text-[var(--color-sand-muted)]">
-                  Monitoring starts {computeStartDate()}
-                </p>
-              )}
+          <div className="grid gap-2">
+            <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
+              Start monitoring
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {LEAD_DAY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => update("lead_days", opt.value)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    form.lead_days === opt.value
+                      ? "bg-[var(--color-terracotta)] text-white"
+                      : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          )}
+            {form.lead_days && !form.is_recurring && (
+              <p className="text-xs text-[var(--color-sand-muted)]">
+                Monitoring starts {computeStartDate()}
+              </p>
+            )}
+          </div>
 
           {error && (
             <div className="rounded-lg border border-[var(--color-terracotta)]/20 bg-[var(--color-terracotta)]/5 px-4 py-3">

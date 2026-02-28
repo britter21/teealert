@@ -8,12 +8,14 @@ interface Props {
   courseId: string;
   courseName: string;
   bookingWindowDays?: number | null;
+  defaultDate?: string;
 }
 
 export function CreateAlertButton({
   courseId,
   courseName,
   bookingWindowDays,
+  defaultDate,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -44,6 +46,7 @@ export function CreateAlertButton({
         courseId={courseId}
         courseName={courseName}
         bookingWindowDays={bookingWindowDays}
+        defaultDate={defaultDate}
       />
     </>
   );

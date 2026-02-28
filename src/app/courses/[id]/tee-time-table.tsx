@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getBookingUrl } from "@/lib/booking-url";
+import { CreateAlertButton } from "./create-alert-button";
 
 interface TeeTime {
   time: string;
@@ -39,14 +40,16 @@ function formatTime12h(time: string): string {
 
 interface Props {
   courseId: string;
+  courseName: string;
   defaultDate: string;
   platform: string;
   platformCourseId: string;
   platformScheduleId?: string | null;
   bookingSlug?: string | null;
+  bookingWindowDays?: number | null;
 }
 
-export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId, platformScheduleId, bookingSlug }: Props) {
+export function TeeTimeTable({ courseId, courseName, defaultDate, platform, platformCourseId, platformScheduleId, bookingSlug, bookingWindowDays }: Props) {
   const [date, setDate] = useState(defaultDate);
   const [times, setTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -146,6 +149,15 @@ export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId
             </Select>
           </div>
         )}
+
+        <div className="ml-auto flex items-end pb-0.5">
+          <CreateAlertButton
+            courseId={courseId}
+            courseName={courseName}
+            bookingWindowDays={bookingWindowDays}
+            defaultDate={date}
+          />
+        </div>
 
         {loading && (
           <div className="flex items-center gap-2 pb-2">
