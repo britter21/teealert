@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   // Input validation
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-  const TIME_RE = /^\d{2}:\d{2}$/;
+  const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/;
 
   if (body.target_date !== undefined && !DATE_RE.test(body.target_date)) {
     return Response.json({ error: "Invalid target_date (YYYY-MM-DD)" }, { status: 400 });

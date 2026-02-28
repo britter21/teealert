@@ -83,8 +83,8 @@ export function AlertFormDialog({
     if (existingAlert) {
       setForm({
         target_date: existingAlert.target_date || defaultDate,
-        earliest_time: existingAlert.earliest_time || "06:00",
-        latest_time: existingAlert.latest_time || "18:00",
+        earliest_time: (existingAlert.earliest_time || "06:00").slice(0, 5),
+        latest_time: (existingAlert.latest_time || "18:00").slice(0, 5),
         min_players: String(existingAlert.min_players || 1),
         max_price: existingAlert.max_price ? String(existingAlert.max_price) : "",
         lead_days:

@@ -384,7 +384,7 @@ function AlertCard({
         <div>
           <span className="text-[var(--color-sand-muted)]">Time: </span>
           <span className="text-[var(--color-charcoal-text)]">
-            {alert.earliest_time || "Any"} - {alert.latest_time || "Any"}
+            {(alert.earliest_time || "Any").slice(0, 5)} - {(alert.latest_time || "Any").slice(0, 5)}
           </span>
         </div>
         <div>
