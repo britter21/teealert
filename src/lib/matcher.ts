@@ -1,5 +1,6 @@
 import { createServiceClient } from "./supabase/server";
 import { sendIMessage } from "./notifications/imessage";
+import { getBookingUrl } from "./booking-url";
 import type { TeeTime } from "./pollers/types";
 
 function getNextOccurrence(days: number[]): string | null {
@@ -46,7 +47,9 @@ export async function matchAndNotify(
   courseId: string,
   courseName: string,
   targetDate: string,
-  newTimes: TeeTime[]
+  newTimes: TeeTime[],
+  platform?: string,
+  platformCourseId?: string
 ) {
   const supabase = createServiceClient();
 
@@ -69,9 +72,14 @@ export async function matchAndNotify(
     const matching = newTimes.filter((t) => matchesAlert(t, alert));
     if (matching.length === 0) continue;
 
+    const bookingLink =
+      platform && platformCourseId
+        ? getBookingUrl(platform, platformCourseId, targetDate)
+        : undefined;
+
     const promises = [];
     if (alert.notify_sms && alert.users?.phone) {
-      promises.push(sendIMessage(alert.users.phone, courseName, matching));
+      promises.push(sendIMessage(alert.users.phone, courseName, matching, bookingLink));
     }
 
     const settled = await Promise.allSettled(promises);

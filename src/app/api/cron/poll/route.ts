@@ -115,7 +115,9 @@ async function handler() {
             course.id,
             course.name,
             dateStr,
-            newTimes
+            newTimes,
+            course.platform,
+            course.platform_course_id
           );
         }
 

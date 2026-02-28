@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertFormDialog } from "@/components/alert-form-dialog";
+import { getBookingUrl } from "@/lib/booking-url";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -26,6 +27,7 @@ interface Alert {
   courses: {
     name: string;
     platform: string;
+    platform_course_id: string;
     location_city: string | null;
     location_state: string | null;
   };
@@ -387,6 +389,17 @@ function AlertCard({
       </div>
 
       <div className="mt-4 flex justify-end gap-1 border-t border-[var(--color-sand)]/5 pt-3">
+        <a
+          href={getBookingUrl(course?.platform, course?.platform_course_id, alert.target_date)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-sage)] hover:bg-[var(--color-sage)]/10"
+        >
+          Book
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          </svg>
+        </a>
         <Button
           variant="ghost"
           size="sm"

@@ -11,7 +11,8 @@ const execAsync = promisify(exec);
 export async function sendIMessage(
   phoneNumber: string,
   courseName: string,
-  times: TeeTime[]
+  times: TeeTime[],
+  bookingUrl?: string
 ): Promise<void> {
   const timeLines = times
     .slice(0, 5)
@@ -21,12 +22,16 @@ export async function sendIMessage(
     )
     .join("\n");
 
-  const message = [
+  const parts = [
     "TEE TIME ALERT",
     courseName,
     "",
     timeLines,
-  ].join("\n");
+  ];
+  if (bookingUrl) {
+    parts.push("", `Book now: ${bookingUrl}`);
+  }
+  const message = parts.join("\n");
 
   const escaped = message
     .replace(/\\/g, "\\\\")

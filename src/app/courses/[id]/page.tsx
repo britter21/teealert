@@ -65,7 +65,12 @@ export default async function CourseDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <TeeTimeTable courseId={course.id} defaultDate={defaultDate} />
+      <TeeTimeTable
+        courseId={course.id}
+        defaultDate={defaultDate}
+        platform={course.platform}
+        platformCourseId={course.platform_course_id}
+      />
     </div>
   );
 }
