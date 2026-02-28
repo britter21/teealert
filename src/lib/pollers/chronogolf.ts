@@ -2,6 +2,9 @@ import type { Course, TeeTime } from "./types";
 
 const CHRONOGOLF_BASE = "https://www.chronogolf.com/marketplace/clubs";
 
+const DEFAULT_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+
 interface ChronogolfSlot {
   start_time: string; // "07:09"
   date: string; // "2026-03-01"
@@ -28,7 +31,13 @@ export async function pollChronogolf(
 
   const resp = await fetch(
     `${CHRONOGOLF_BASE}/${clubId}/teetimes?${params}`,
-    { cache: "no-store" }
+    {
+      headers: {
+        "User-Agent": course.ua_override || DEFAULT_UA,
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    }
   );
 
   if (!resp.ok) {
