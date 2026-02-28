@@ -4,7 +4,8 @@
 export function getBookingUrl(
   platform: string,
   platformCourseId: string,
-  date?: string
+  date?: string,
+  bookingSlug?: string | null
 ): string {
   switch (platform) {
     case "foreup": {
@@ -12,8 +13,11 @@ export function getBookingUrl(
       return date ? `${base}#date=${date}` : base;
     }
     case "chronogolf": {
-      const base = `https://www.chronogolf.com/marketplace/clubs/${platformCourseId}`;
-      return date ? `${base}#teetimes?date=${date}` : base;
+      if (bookingSlug) {
+        const base = `https://www.chronogolf.com/club/${bookingSlug}`;
+        return date ? `${base}?date=${date}` : base;
+      }
+      return "#";
     }
     default:
       return "#";

@@ -117,7 +117,8 @@ async function handler() {
             dateStr,
             newTimes,
             course.platform,
-            course.platform_course_id
+            course.platform_course_id,
+            course.booking_slug
           );
         }
 

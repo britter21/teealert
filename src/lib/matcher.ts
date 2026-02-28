@@ -49,7 +49,8 @@ export async function matchAndNotify(
   targetDate: string,
   newTimes: TeeTime[],
   platform?: string,
-  platformCourseId?: string
+  platformCourseId?: string,
+  bookingSlug?: string | null
 ) {
   const supabase = createServiceClient();
 
@@ -79,7 +80,7 @@ export async function matchAndNotify(
 
     const bookingLink =
       platform && platformCourseId
-        ? getBookingUrl(platform, platformCourseId, targetDate)
+        ? getBookingUrl(platform, platformCourseId, targetDate, bookingSlug)
         : undefined;
 
     const promises = [];

@@ -18,4 +18,5 @@ export interface Course {
   timezone: string;
   ua_override: string | null;
   poll_interval_seconds: number;
+  booking_slug: string | null;
 }

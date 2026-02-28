@@ -41,9 +41,10 @@ interface Props {
   defaultDate: string;
   platform: string;
   platformCourseId: string;
+  bookingSlug?: string | null;
 }
 
-export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId }: Props) {
+export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId, bookingSlug }: Props) {
   const [date, setDate] = useState(defaultDate);
   const [times, setTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -183,7 +184,7 @@ export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId
               </Badge>
             )}
             <a
-              href={getBookingUrl(platform, platformCourseId, date)}
+              href={getBookingUrl(platform, platformCourseId, date, bookingSlug)}
               target="_blank"
               rel="noopener noreferrer"
               className="ml-auto flex items-center gap-1.5 text-sm font-medium text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-glow)]"
