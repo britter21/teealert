@@ -19,4 +19,5 @@ export interface Course {
   ua_override: string | null;
   poll_interval_seconds: number;
   booking_slug: string | null;
+  platform_course_uuid: string | null;
 }
