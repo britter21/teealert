@@ -18,7 +18,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("alerts")
-    .select("*, courses(name, platform, platform_course_id, booking_slug, location_city, location_state)")
+    .select("*, courses(name, platform, platform_course_id, platform_schedule_id, booking_slug, location_city, location_state)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 

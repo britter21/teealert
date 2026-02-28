@@ -5,11 +5,14 @@ export function getBookingUrl(
   platform: string,
   platformCourseId: string,
   date?: string,
-  bookingSlug?: string | null
+  bookingSlug?: string | null,
+  platformScheduleId?: string | null
 ): string {
   switch (platform) {
     case "foreup": {
-      const base = `https://foreupsoftware.com/index.php/booking/${platformCourseId}`;
+      const base = platformScheduleId
+        ? `https://foreupsoftware.com/index.php/booking/index/${platformCourseId}/${platformScheduleId}`
+        : `https://foreupsoftware.com/index.php/booking/index/${platformCourseId}`;
       return date ? `${base}#date=${date}` : base;
     }
     case "chronogolf": {

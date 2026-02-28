@@ -28,6 +28,7 @@ interface Alert {
     name: string;
     platform: string;
     platform_course_id: string;
+    platform_schedule_id: string | null;
     booking_slug: string | null;
     location_city: string | null;
     location_state: string | null;
@@ -391,7 +392,7 @@ function AlertCard({
 
       <div className="mt-4 flex justify-end gap-1 border-t border-[var(--color-sand)]/5 pt-3">
         <a
-          href={getBookingUrl(course?.platform, course?.platform_course_id, alert.target_date, course?.booking_slug)}
+          href={getBookingUrl(course?.platform, course?.platform_course_id, alert.target_date, course?.booking_slug, course?.platform_schedule_id)}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-sage)] hover:bg-[var(--color-sage)]/10"

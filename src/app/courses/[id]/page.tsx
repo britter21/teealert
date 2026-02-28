@@ -70,6 +70,7 @@ export default async function CourseDetailPage({ params }: Props) {
         defaultDate={defaultDate}
         platform={course.platform}
         platformCourseId={course.platform_course_id}
+        platformScheduleId={course.platform_schedule_id}
         bookingSlug={course.booking_slug}
       />
     </div>

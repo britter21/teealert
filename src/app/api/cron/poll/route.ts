@@ -118,7 +118,8 @@ async function handler() {
             newTimes,
             course.platform,
             course.platform_course_id,
-            course.booking_slug
+            course.booking_slug,
+            course.platform_schedule_id
           );
         }
 
