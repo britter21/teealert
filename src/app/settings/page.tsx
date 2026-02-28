@@ -154,7 +154,23 @@ export default function SettingsPage() {
 
       setProfile(data);
       setPhone(data.phone || "");
-      setMessage({ type: "success", text: "Phone number saved." });
+
+      // Send a confirmation iMessage if phone was set
+      if (data.phone) {
+        setMessage({ type: "success", text: "Phone number saved. Sending test message..." });
+        try {
+          const smsRes = await fetch("/api/user/test-sms", { method: "POST" });
+          if (smsRes.ok) {
+            setMessage({ type: "success", text: "Phone number saved. Check your messages!" });
+          } else {
+            setMessage({ type: "success", text: "Phone number saved. (Test message could not be sent)" });
+          }
+        } catch {
+          setMessage({ type: "success", text: "Phone number saved. (Test message could not be sent)" });
+        }
+      } else {
+        setMessage({ type: "success", text: "Phone number removed." });
+      }
     } catch {
       setMessage({ type: "error", text: "Failed to save. Please try again." });
     } finally {

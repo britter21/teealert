@@ -50,6 +50,24 @@ const tierColors: Record<string, string> = {
   unlimited: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
 };
 
+function formatTime12h(time: string | null): string {
+  if (!time || time === "Any") return "Any";
+  const clean = time.slice(0, 5);
+  const [hStr, mStr] = clean.split(":");
+  const h = parseInt(hStr, 10);
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hour12}:${mStr} ${suffix}`;
+}
+
+function formatDateWithDow(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  const dow = DAY_LABELS[d.getDay()];
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${dow}, ${monthNames[month - 1]} ${day}`;
+}
+
 export default function DashboardPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [account, setAccount] = useState<AccountInfo | null>(null);
@@ -76,6 +94,21 @@ export default function DashboardPage() {
   async function handleDelete(id: string) {
     await fetch(`/api/alerts/${id}`, { method: "DELETE" });
     setAlerts((prev) => prev.filter((a) => a.id !== id));
+  }
+
+  async function handleToggleActive(id: string, currentlyActive: boolean) {
+    const res = await fetch(`/api/alerts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: !currentlyActive }),
+    });
+    if (res.ok) {
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.id === id ? { ...a, is_active: !currentlyActive } : a
+        )
+      );
+    }
   }
 
   const activeAlerts = alerts.filter((a) => a.is_active && !a.triggered_at);
@@ -194,6 +227,7 @@ export default function DashboardPage() {
               alerts={activeAlerts}
               onDelete={handleDelete}
               onEdit={setEditingAlert}
+              onToggleActive={handleToggleActive}
             />
           )}
           {triggeredAlerts.length > 0 && (
@@ -203,15 +237,17 @@ export default function DashboardPage() {
               alerts={triggeredAlerts}
               onDelete={handleDelete}
               onEdit={setEditingAlert}
+              onToggleActive={handleToggleActive}
             />
           )}
           {inactiveAlerts.length > 0 && (
             <AlertSection
-              title="Inactive"
-              description="Paused or expired alerts"
+              title="Paused"
+              description="Alerts that are currently paused"
               alerts={inactiveAlerts}
               onDelete={handleDelete}
               onEdit={setEditingAlert}
+              onToggleActive={handleToggleActive}
             />
           )}
         </div>
@@ -243,12 +279,14 @@ function AlertSection({
   alerts,
   onDelete,
   onEdit,
+  onToggleActive,
 }: {
   title: string;
   description: string;
   alerts: Alert[];
   onDelete: (id: string) => void;
   onEdit: (alert: Alert) => void;
+  onToggleActive: (id: string, currentlyActive: boolean) => void;
 }) {
   return (
     <div>
@@ -265,6 +303,7 @@ function AlertSection({
             alert={alert}
             onDelete={onDelete}
             onEdit={onEdit}
+            onToggleActive={onToggleActive}
           />
         ))}
       </div>
@@ -291,6 +330,7 @@ function formatRecurrence(days: number[] | null): string | null {
 
 function monitoringStatus(alert: Alert): string | null {
   if (!alert.start_monitoring_date || !alert.target_date) return null;
+  if (alert.is_recurring) return null;
   const today = new Date().toISOString().split("T")[0];
   if (alert.start_monitoring_date > today) {
     const start = new Date(alert.start_monitoring_date);
@@ -307,10 +347,12 @@ function AlertCard({
   alert,
   onDelete,
   onEdit,
+  onToggleActive,
 }: {
   alert: Alert;
   onDelete: (id: string) => void;
   onEdit: (alert: Alert) => void;
+  onToggleActive: (id: string, currentlyActive: boolean) => void;
 }) {
   const course = alert.courses;
   const recurrence = formatRecurrence(alert.recurrence_days);
@@ -333,7 +375,7 @@ function AlertCard({
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          {alert.is_recurring && (
+          {alert.is_recurring && recurrence && (
             <Badge
               variant="outline"
               className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
@@ -359,19 +401,28 @@ function AlertCard({
               variant="secondary"
               className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
             >
-              Inactive
+              Paused
             </Badge>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <div>
-          <span className="text-[var(--color-sand-muted)]">Date: </span>
-          <span className="text-[var(--color-charcoal-text)]">
-            {alert.target_date}
-          </span>
-        </div>
+        {alert.is_recurring ? (
+          <div className="col-span-2">
+            <span className="text-[var(--color-sand-muted)]">Schedule: </span>
+            <span className="text-[var(--color-charcoal-text)]">
+              {recurrence || "No days selected"}
+            </span>
+          </div>
+        ) : (
+          <div>
+            <span className="text-[var(--color-sand-muted)]">Date: </span>
+            <span className="text-[var(--color-charcoal-text)]">
+              {formatDateWithDow(alert.target_date)}
+            </span>
+          </div>
+        )}
         <div>
           <span className="text-[var(--color-sand-muted)]">Players: </span>
           <span className="text-[var(--color-charcoal-text)]">
@@ -381,7 +432,7 @@ function AlertCard({
         <div>
           <span className="text-[var(--color-sand-muted)]">Time: </span>
           <span className="text-[var(--color-charcoal-text)]">
-            {(alert.earliest_time || "Any").slice(0, 5)} - {(alert.latest_time || "Any").slice(0, 5)}
+            {formatTime12h(alert.earliest_time)} – {formatTime12h(alert.latest_time)}
           </span>
         </div>
         <div>
@@ -393,17 +444,29 @@ function AlertCard({
       </div>
 
       <div className="mt-4 flex justify-end gap-1 border-t border-[var(--color-sand)]/5 pt-3">
-        <a
-          href={getBookingUrl(course?.platform, course?.platform_course_id, alert.target_date, course?.booking_slug, course?.platform_schedule_id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-sage)] hover:bg-[var(--color-sage)]/10"
-        >
-          Book
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-          </svg>
-        </a>
+        {!alert.is_recurring && (
+          <a
+            href={getBookingUrl(course?.platform, course?.platform_course_id, alert.target_date, course?.booking_slug, course?.platform_schedule_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-sage)] hover:bg-[var(--color-sage)]/10"
+          >
+            Book
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+          </a>
+        )}
+        {!alert.triggered_at && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
+            onClick={() => onToggleActive(alert.id, alert.is_active)}
+          >
+            {alert.is_active ? "Pause" : "Resume"}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"
