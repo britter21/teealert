@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -70,10 +70,15 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
       .catch(() => {});
   }, [courseId]);
 
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+
   const fetchTimes = useCallback(
-    async (d: string, bc: string) => {
-      setLoading(true);
-      setError("");
+    async (d: string, bc: string, silent = false) => {
+      if (!silent) {
+        setLoading(true);
+        setError("");
+      }
       try {
         const params = new URLSearchParams({ date: d });
         if (bc) params.set("booking_class", bc);
@@ -83,11 +88,15 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to fetch");
         setTimes(data.times || []);
+        setLastUpdated(new Date());
+        if (silent) setError("");
       } catch (err) {
-        setError((err as Error).message);
-        setTimes([]);
+        if (!silent) {
+          setError((err as Error).message);
+          setTimes([]);
+        }
       } finally {
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     },
     [courseId]
@@ -98,6 +107,17 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
     if (!selectedClass && bookingClasses.length > 0) return;
     fetchTimes(date, selectedClass);
   }, [date, selectedClass, fetchTimes, bookingClasses.length]);
+
+  // Auto-refresh every 15 seconds
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      fetchTimes(date, selectedClass, true);
+    }, 15_000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [date, selectedClass, fetchTimes]);
 
   const available = times.filter((t) => t.availableSpots !== 0);
   const showClassSelector = bookingClasses.filter((c) => !c.is_protected).length > 1;
@@ -197,13 +217,19 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
                 {available.length} available
               </Badge>
             )}
+            {lastUpdated && (
+              <span className="flex items-center gap-1.5 text-xs text-[var(--color-sand-muted)]">
+                <span className="pulse-available h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" />
+                Live
+              </span>
+            )}
             <a
               href={getBookingUrl(platform, platformCourseId, date, bookingSlug, platformScheduleId)}
               target="_blank"
               rel="noopener noreferrer"
               className="ml-auto flex items-center gap-1.5 text-sm font-medium text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-glow)]"
             >
-              Book on {platform === "chronogolf" ? "Chronogolf" : "ForeUp"}
+              Book tee time
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
               </svg>

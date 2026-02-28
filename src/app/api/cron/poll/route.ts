@@ -1,46 +1,6 @@
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
+import { Client } from "@upstash/qstash";
 import { createServiceClient } from "@/lib/supabase/server";
-import { pollForeUp } from "@/lib/pollers/foreup";
-import { pollChronogolf } from "@/lib/pollers/chronogolf";
-import { diffAndDetectNew } from "@/lib/diff";
-import { matchAndNotify } from "@/lib/matcher";
-import type { Course, TeeTime } from "@/lib/pollers/types";
-
-async function pollCourse(
-  course: Course,
-  targetDate: string
-): Promise<TeeTime[]> {
-  switch (course.platform) {
-    case "foreup": {
-      // ForeUp expects MM-DD-YYYY
-      const [y, m, d] = targetDate.split("-");
-      return pollForeUp(course, `${m}-${d}-${y}`);
-    }
-    case "chronogolf":
-      return pollChronogolf(course, targetDate);
-    default:
-      throw new Error(`Unknown platform: ${course.platform}`);
-  }
-}
-
-function getTargetDates(bookingWindowDays: number | null): string[] {
-  const dates: string[] = [];
-  const now = new Date();
-
-  // Always poll tomorrow
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  dates.push(tomorrow.toISOString().split("T")[0]);
-
-  // Poll the booking window edge (where new times appear)
-  if (bookingWindowDays && bookingWindowDays > 1) {
-    const edge = new Date(now);
-    edge.setDate(edge.getDate() + bookingWindowDays);
-    dates.push(edge.toISOString().split("T")[0]);
-  }
-
-  return [...new Set(dates)]; // dedupe
-}
 
 function getNextOccurrence(days: number[]): string | null {
   if (!days || days.length === 0) return null;
@@ -59,7 +19,6 @@ async function advanceRecurringAlerts() {
   const supabase = createServiceClient();
   const today = new Date().toISOString().split("T")[0];
 
-  // Find recurring alerts whose target_date is in the past
   const { data: staleAlerts } = await supabase
     .from("alerts")
     .select("id, recurrence_days")
@@ -80,13 +39,28 @@ async function advanceRecurringAlerts() {
   }
 }
 
+function getTargetDates(bookingWindowDays: number | null): string[] {
+  const dates: string[] = [];
+  const now = new Date();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  dates.push(tomorrow.toISOString().split("T")[0]);
+
+  if (bookingWindowDays && bookingWindowDays > 1) {
+    const edge = new Date(now);
+    edge.setDate(edge.getDate() + bookingWindowDays);
+    dates.push(edge.toISOString().split("T")[0]);
+  }
+
+  return [...new Set(dates)];
+}
+
 async function handler() {
   const supabase = createServiceClient();
 
-  // Advance any recurring alerts whose date has passed
   await advanceRecurringAlerts();
 
-  // Only poll courses that have active, untriggered alerts
   const today = new Date().toISOString().split("T")[0];
   const { data: alertedCourseIds } = await supabase
     .from("alerts")
@@ -115,48 +89,40 @@ async function handler() {
     return Response.json({ polled: 0, message: "No courses to poll" });
   }
 
-  const allResults: Record<string, unknown>[] = [];
+  // Fan out: publish one QStash message per course+date
+  const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
+  const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://teealert.vercel.app";
+
+  const messages: { courseId: string; courseName: string; date: string }[] = [];
 
   for (const course of courses) {
     const dates = getTargetDates(course.booking_window_days);
-
     for (const dateStr of dates) {
-      try {
-        const times = await pollCourse(course as Course, dateStr);
-        const newTimes = await diffAndDetectNew(course.id, dateStr, times);
-
-        let notifications: { alertId: string; matched: number }[] = [];
-        if (newTimes.length > 0) {
-          notifications = await matchAndNotify(
-            course.id,
-            course.name,
-            dateStr,
-            newTimes,
-            course.platform,
-            course.platform_course_id,
-            course.booking_slug,
-            course.platform_schedule_id
-          );
-        }
-
-        allResults.push({
-          course: course.name,
-          date: dateStr,
-          totalTimes: times.length,
-          newTimes: newTimes.length,
-          notifications: notifications.length,
-        });
-      } catch (err) {
-        allResults.push({
-          course: course.name,
-          date: dateStr,
-          error: (err as Error).message,
-        });
-      }
+      messages.push({
+        courseId: course.id,
+        courseName: course.name,
+        date: dateStr,
+      });
     }
   }
 
-  return Response.json({ polled: courses.length, results: allResults });
+  // Batch publish — each message becomes its own function invocation
+  await Promise.all(
+    messages.map((msg) =>
+      qstash.publishJSON({
+        url: `${baseUrl}/api/cron/poll-course`,
+        body: msg,
+      })
+    )
+  );
+
+  return Response.json({
+    polled: courses.length,
+    dispatched: messages.length,
+    courses: messages.map((m) => `${m.courseName} (${m.date})`),
+  });
 }
 
 export const POST = verifySignatureAppRouter(handler);
