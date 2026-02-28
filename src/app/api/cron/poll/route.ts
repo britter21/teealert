@@ -86,17 +86,33 @@ async function handler() {
   // Advance any recurring alerts whose date has passed
   await advanceRecurringAlerts();
 
+  // Only poll courses that have active, untriggered alerts
+  const today = new Date().toISOString().split("T")[0];
+  const { data: alertedCourseIds } = await supabase
+    .from("alerts")
+    .select("course_id")
+    .eq("is_active", true)
+    .is("triggered_at", null)
+    .lte("start_monitoring_date", today);
+
+  if (!alertedCourseIds || alertedCourseIds.length === 0) {
+    return Response.json({ polled: 0, message: "No active alerts" });
+  }
+
+  const courseIds = [...new Set(alertedCourseIds.map((a) => a.course_id))];
+
   const { data: courses, error } = await supabase
     .from("courses")
     .select("*")
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .in("id", courseIds);
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 
   if (!courses || courses.length === 0) {
-    return Response.json({ polled: 0, message: "No active courses" });
+    return Response.json({ polled: 0, message: "No courses to poll" });
   }
 
   const allResults: Record<string, unknown>[] = [];
