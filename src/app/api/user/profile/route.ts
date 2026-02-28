@@ -20,7 +20,7 @@ export async function GET() {
   // Fetch profile separately (upsert with ignoreDuplicates doesn't return data)
   const { data, error } = await service
     .from("user_profiles")
-    .select("phone, notification_phone, tier")
+    .select("phone, notification_phone, tier, alert_defaults")
     .eq("id", user.id)
     .single();
 
@@ -33,6 +33,7 @@ export async function GET() {
     phone: data.phone,
     notification_phone: data.notification_phone,
     tier: data.tier,
+    alert_defaults: data.alert_defaults || {},
   });
 }
 
@@ -74,6 +75,10 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (body.alert_defaults !== undefined) {
+    allowed.alert_defaults = body.alert_defaults;
+  }
+
   if (Object.keys(allowed).length === 0) {
     return Response.json({ error: "No fields to update" }, { status: 400 });
   }
@@ -91,7 +96,7 @@ export async function PATCH(request: Request) {
     .from("user_profiles")
     .update(allowed)
     .eq("id", user.id)
-    .select("phone, notification_phone, tier")
+    .select("phone, notification_phone, tier, alert_defaults")
     .single();
 
   if (error) {
@@ -103,5 +108,6 @@ export async function PATCH(request: Request) {
     phone: data.phone,
     notification_phone: data.notification_phone,
     tier: data.tier,
+    alert_defaults: data.alert_defaults || {},
   });
 }

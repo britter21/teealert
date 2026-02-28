@@ -80,7 +80,7 @@ export function AlertFormDialog({
     recurrence_days: [] as number[],
   });
 
-  // Populate form when editing
+  // Load user defaults when creating, or populate from existing alert when editing
   useEffect(() => {
     if (existingAlert) {
       setForm({
@@ -105,8 +105,27 @@ export function AlertFormDialog({
         is_recurring: existingAlert.is_recurring || false,
         recurrence_days: existingAlert.recurrence_days || [],
       });
+    } else if (open) {
+      // Fetch user defaults for new alerts
+      fetch("/api/user/profile")
+        .then((r) => r.ok ? r.json() : null)
+        .then((data) => {
+          if (!data?.alert_defaults || Object.keys(data.alert_defaults).length === 0) return;
+          const d = data.alert_defaults;
+          setForm((prev) => ({
+            target_date: defaultDateProp || defaultDate,
+            earliest_time: d.earliest_time || prev.earliest_time,
+            latest_time: d.latest_time || prev.latest_time,
+            min_players: d.min_players ? String(d.min_players) : prev.min_players,
+            max_price: d.max_price != null ? String(d.max_price) : prev.max_price,
+            lead_days: d.lead_days != null ? d.lead_days : (bookingWindowDays ? String(bookingWindowDays) : prev.lead_days),
+            is_recurring: d.is_recurring ?? prev.is_recurring,
+            recurrence_days: d.recurrence_days?.length ? d.recurrence_days : prev.recurrence_days,
+          }));
+        })
+        .catch(() => {});
     }
-  }, [existingAlert, defaultDate]);
+  }, [existingAlert, defaultDate, defaultDateProp, open, bookingWindowDays]);
 
   function update(field: string, value: string | boolean | number[]) {
     setForm((prev) => ({ ...prev, [field]: value }));
