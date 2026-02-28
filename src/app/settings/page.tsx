@@ -156,7 +156,17 @@ export default function SettingsPage() {
       setPhone(data.phone || "");
 
       if (data.phone) {
-        setMessage({ type: "success", text: "Phone number saved. You'll receive alerts via iMessage when tee times match." });
+        setMessage({ type: "success", text: "Phone number saved. Sending confirmation..." });
+        try {
+          const smsRes = await fetch("/api/user/test-sms", { method: "POST" });
+          if (smsRes.ok) {
+            setMessage({ type: "success", text: "Phone number saved. Check your messages!" });
+          } else {
+            setMessage({ type: "success", text: "Phone number saved. Confirmation message could not be sent." });
+          }
+        } catch {
+          setMessage({ type: "success", text: "Phone number saved. Confirmation message could not be sent." });
+        }
       } else {
         setMessage({ type: "success", text: "Phone number removed." });
       }

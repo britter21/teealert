@@ -28,20 +28,9 @@ function formatMessage(
 }
 
 /**
- * Send an iMessage.
- *
- * If CHRONOGOLF_RELAY_URL is set, POSTs to the relay server on the Mac mini.
- * Otherwise falls back to local osascript (only works on macOS).
+ * Deliver a message string via relay (production) or osascript (local dev).
  */
-export async function sendIMessage(
-  phoneNumber: string,
-  courseName: string,
-  times: TeeTime[],
-  bookingUrl?: string
-): Promise<void> {
-  const message = formatMessage(courseName, times, bookingUrl);
-
-  // Production: send via relay server on Mac mini
+async function deliver(phoneNumber: string, message: string): Promise<void> {
   if (RELAY_URL && RELAY_SECRET) {
     const res = await fetch(`${RELAY_URL}/imessage`, {
       method: "POST",
@@ -59,7 +48,6 @@ export async function sendIMessage(
     return;
   }
 
-  // Local dev: send via osascript directly
   const escaped = message
     .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"')
@@ -79,4 +67,27 @@ end tell`;
     console.error("iMessage send failed:", err);
     throw new Error(`iMessage failed: ${(err as Error).message}`);
   }
+}
+
+/**
+ * Send a tee time alert iMessage.
+ */
+export async function sendIMessage(
+  phoneNumber: string,
+  courseName: string,
+  times: TeeTime[],
+  bookingUrl?: string
+): Promise<void> {
+  const message = formatMessage(courseName, times, bookingUrl);
+  await deliver(phoneNumber, message);
+}
+
+/**
+ * Send a plain text iMessage (e.g. confirmation messages).
+ */
+export async function sendPlainIMessage(
+  phoneNumber: string,
+  message: string
+): Promise<void> {
+  await deliver(phoneNumber, message);
 }
