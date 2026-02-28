@@ -19,7 +19,7 @@ export async function getUserTier(userId: string): Promise<string> {
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("created_at, tier")
-    .eq("user_id", userId)
+    .eq("id", userId)
     .single();
 
   // Legacy hardcoded tier (e.g. birdie for the admin user)
@@ -56,7 +56,7 @@ export async function getTrialInfo(userId: string): Promise<{
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("created_at, tier")
-    .eq("user_id", userId)
+    .eq("id", userId)
     .single();
 
   // Legacy hardcoded tier

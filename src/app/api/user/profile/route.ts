@@ -12,11 +12,16 @@ export async function GET() {
 
   const service = createServiceClient();
 
-  // Upsert to ensure profile exists
+  // Ensure profile exists
+  await service
+    .from("user_profiles")
+    .upsert({ id: user.id }, { onConflict: "id", ignoreDuplicates: true });
+
+  // Fetch profile separately (upsert with ignoreDuplicates doesn't return data)
   const { data, error } = await service
     .from("user_profiles")
-    .upsert({ id: user.id }, { onConflict: "id", ignoreDuplicates: true })
     .select("phone, notification_phone, tier")
+    .eq("id", user.id)
     .single();
 
   if (error) {
@@ -77,7 +82,7 @@ export async function PATCH(request: Request) {
 
   const service = createServiceClient();
 
-  // Upsert to ensure profile exists, then update
+  // Ensure profile exists
   await service
     .from("user_profiles")
     .upsert({ id: user.id }, { onConflict: "id", ignoreDuplicates: true });
