@@ -1,4 +1,4 @@
-import { redis } from "./redis";
+import { getRedis } from "./redis";
 import type { TeeTime } from "./pollers/types";
 
 export async function diffAndDetectNew(
@@ -7,6 +7,8 @@ export async function diffAndDetectNew(
   currentTimes: TeeTime[]
 ): Promise<TeeTime[]> {
   const cacheKey = `teetimes:${courseId}:${targetDate}`;
+
+  const redis = getRedis();
 
   // Get previous snapshot from Redis
   const previous: string[] = (await redis.smembers(cacheKey)) || [];
