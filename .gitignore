@@ -40,3 +40,8 @@ supabase/.temp/
 *.tsbuildinfo
 next-env.d.ts
 .claude/
+
+# data dumps / scraping artifacts
+foreup_*.json
+booking_classes_seed.json
+dogfood-output/
