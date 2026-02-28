@@ -1,6 +1,8 @@
 import type { Course, TeeTime } from "./types";
 
-const CHRONOGOLF_BASE = "https://www.chronogolf.com/marketplace/clubs";
+const CHRONOGOLF_DIRECT = "https://www.chronogolf.com/marketplace/clubs";
+const RELAY_URL = process.env.CHRONOGOLF_RELAY_URL; // e.g. "http://your-mac:3456"
+const RELAY_SECRET = process.env.CHRONOGOLF_RELAY_SECRET;
 
 const DEFAULT_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
@@ -12,6 +14,34 @@ interface ChronogolfSlot {
   out_of_capacity: boolean;
   frozen: boolean;
   green_fees: { green_fee: number; affiliation_type_id: number }[];
+}
+
+async function fetchTeetimes(
+  course: Course,
+  clubId: string,
+  params: URLSearchParams
+): Promise<Response> {
+  // Use relay if configured (bypasses Cloudflare IP blocks on cloud providers)
+  if (RELAY_URL && RELAY_SECRET) {
+    const relayParams = new URLSearchParams(params);
+    relayParams.set("club_id", clubId);
+    return fetch(`${RELAY_URL}/teetimes?${relayParams}`, {
+      headers: { "X-Relay-Secret": RELAY_SECRET },
+      cache: "no-store",
+    });
+  }
+
+  // Direct (works from residential IPs, blocked from cloud IPs)
+  return fetch(`${CHRONOGOLF_DIRECT}/${clubId}/teetimes?${params}`, {
+    headers: {
+      "User-Agent": course.ua_override || DEFAULT_UA,
+      Accept: "application/json, text/plain, */*",
+      "Accept-Language": "en-US,en;q=0.9",
+      Referer: "https://www.chronogolf.com/",
+      Origin: "https://www.chronogolf.com",
+    },
+    cache: "no-store",
+  });
 }
 
 export async function pollChronogolf(
@@ -29,19 +59,7 @@ export async function pollChronogolf(
     params.set("affiliation_type_ids", course.platform_booking_class);
   }
 
-  const resp = await fetch(
-    `${CHRONOGOLF_BASE}/${clubId}/teetimes?${params}`,
-    {
-      headers: {
-        "User-Agent": course.ua_override || DEFAULT_UA,
-        Accept: "application/json, text/plain, */*",
-        "Accept-Language": "en-US,en;q=0.9",
-        Referer: "https://www.chronogolf.com/",
-        Origin: "https://www.chronogolf.com",
-      },
-      cache: "no-store",
-    }
-  );
+  const resp = await fetchTeetimes(course, clubId, params);
 
   if (!resp.ok) {
     throw new Error(`Chronogolf ${resp.status}: ${await resp.text()}`);
