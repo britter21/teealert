@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,14 @@ const CATEGORIES = [
 ];
 
 export default function SupportPage() {
+  return (
+    <Suspense>
+      <SupportPageInner />
+    </Suspense>
+  );
+}
+
+function SupportPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authed, setAuthed] = useState<boolean | null>(null);
