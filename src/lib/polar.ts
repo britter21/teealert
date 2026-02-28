@@ -7,28 +7,32 @@ export const polar = new Polar({
 
 // Subscription tier definitions
 export const TIERS = {
-  free: {
-    name: "Free",
-    maxAlerts: 1,
-    channels: ["email"] as const,
+  starter: {
+    name: "Starter",
+    maxAlerts: 2,
+    channels: ["email", "sms"] as const,
     pollIntervalSeconds: 60,
   },
-  pro: {
-    name: "Pro",
-    maxAlerts: 10,
-    channels: ["email", "sms"] as const,
-    pollIntervalSeconds: 30,
-  },
-  birdie: {
-    name: "Birdie",
+  unlimited: {
+    name: "Unlimited",
     maxAlerts: Infinity,
-    channels: ["email", "sms", "push"] as const,
+    channels: ["email", "sms"] as const,
     pollIntervalSeconds: 15,
   },
 } as const;
 
 export type TierName = keyof typeof TIERS;
 
-export function getTierLimits(tier: TierName) {
-  return TIERS[tier];
+// Free trial duration in days
+export const FREE_TRIAL_DAYS = 14;
+
+export function getTierLimits(tier: string) {
+  if (tier in TIERS) {
+    return TIERS[tier as TierName];
+  }
+  // Legacy tiers map to new ones
+  if (tier === "free") return TIERS.starter;
+  if (tier === "pro") return TIERS.unlimited;
+  if (tier === "birdie") return TIERS.unlimited;
+  return TIERS.starter;
 }

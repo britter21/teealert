@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getUserTier, getUserAlertCount } from "@/lib/subscription";
+import { getUserTier, getUserAlertCount, getTrialInfo } from "@/lib/subscription";
 import { getTierLimits } from "@/lib/polar";
 
 export async function GET() {
@@ -15,6 +15,7 @@ export async function GET() {
   const tier = await getUserTier(user.id);
   const alertCount = await getUserAlertCount(user.id);
   const limits = getTierLimits(tier);
+  const trial = await getTrialInfo(user.id);
 
   return Response.json({
     tier,
@@ -22,5 +23,7 @@ export async function GET() {
     maxAlerts: limits.maxAlerts === Infinity ? null : limits.maxAlerts,
     channels: limits.channels,
     pollIntervalSeconds: limits.pollIntervalSeconds,
+    isTrial: trial.isTrial,
+    trialDaysRemaining: trial.daysRemaining,
   });
 }

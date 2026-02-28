@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
+import Link from "next/link";
 import { Nav } from "@/components/nav";
 import "./globals.css";
 
@@ -40,7 +41,10 @@ export default function RootLayout({
             <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[var(--color-sand)]">
               TeeAlert
             </p>
-            <p>Never miss a tee time again</p>
+            <div className="flex items-center gap-4">
+              <Link href="/privacy" className="hover:text-[var(--color-sand)]">Privacy</Link>
+              <Link href="/terms" className="hover:text-[var(--color-sand)]">Terms</Link>
+            </div>
           </div>
         </footer>
       </body>

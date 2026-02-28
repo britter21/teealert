@@ -1,8 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
-import type { TierName } from "@/lib/polar";
-import { getTierLimits } from "@/lib/polar";
+import { getTierLimits, FREE_TRIAL_DAYS } from "@/lib/polar";
 
-export async function getUserTier(userId: string): Promise<TierName> {
+export async function getUserTier(userId: string): Promise<string> {
   const supabase = createServiceClient();
 
   const { data } = await supabase
@@ -14,7 +13,69 @@ export async function getUserTier(userId: string): Promise<TierName> {
     .limit(1)
     .single();
 
-  return (data?.tier as TierName) || "free";
+  if (data?.tier) return data.tier;
+
+  // Check if user is within free trial period
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("created_at, tier")
+    .eq("user_id", userId)
+    .single();
+
+  // Legacy hardcoded tier (e.g. birdie for the admin user)
+  if (profile?.tier && profile.tier !== "free") return profile.tier;
+
+  // Free trial: all users get unlimited tier for FREE_TRIAL_DAYS
+  if (profile?.created_at) {
+    const createdAt = new Date(profile.created_at);
+    const trialEnd = new Date(createdAt);
+    trialEnd.setDate(trialEnd.getDate() + FREE_TRIAL_DAYS);
+    if (new Date() < trialEnd) return "unlimited";
+  }
+
+  return "starter";
+}
+
+export async function getTrialInfo(userId: string): Promise<{
+  isTrial: boolean;
+  daysRemaining: number;
+}> {
+  const supabase = createServiceClient();
+
+  // Check for active subscription first
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .limit(1)
+    .single();
+
+  if (sub) return { isTrial: false, daysRemaining: 0 };
+
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("created_at, tier")
+    .eq("user_id", userId)
+    .single();
+
+  // Legacy hardcoded tier
+  if (profile?.tier && profile.tier !== "free") {
+    return { isTrial: false, daysRemaining: 0 };
+  }
+
+  if (profile?.created_at) {
+    const createdAt = new Date(profile.created_at);
+    const trialEnd = new Date(createdAt);
+    trialEnd.setDate(trialEnd.getDate() + FREE_TRIAL_DAYS);
+    const remaining = Math.max(
+      0,
+      Math.ceil((trialEnd.getTime() - Date.now()) / 86400000)
+    );
+    if (remaining > 0) return { isTrial: true, daysRemaining: remaining };
+  }
+
+  return { isTrial: false, daysRemaining: 0 };
 }
 
 export async function getUserAlertCount(userId: string): Promise<number> {
@@ -31,7 +92,7 @@ export async function getUserAlertCount(userId: string): Promise<number> {
 
 export async function canCreateAlert(userId: string): Promise<{
   allowed: boolean;
-  tier: TierName;
+  tier: string;
   current: number;
   limit: number;
 }> {

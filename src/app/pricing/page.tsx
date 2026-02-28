@@ -3,70 +3,50 @@ import { Button } from "@/components/ui/button";
 
 const plans = [
   {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Get started with basic tee time alerts.",
+    name: "Starter",
+    price: "$2.99",
+    period: "/month",
+    description: "For casual golfers who want a heads-up on tee times.",
     features: [
-      "1 active alert",
-      "Email notifications",
-      "2,300+ courses",
-      "Standard polling (60s)",
+      "2 active alerts",
+      "SMS & Email notifications",
+      "60-second polling",
+      "All courses & booking classes",
     ],
     cta: "Get Started",
-    href: "/login",
     highlighted: false,
   },
   {
-    name: "Pro",
+    name: "Unlimited",
     price: "$9.99",
     period: "/month",
-    description: "For the dedicated golfer who plays every week.",
+    description: "Unlimited alerts with real-time monitoring.",
     features: [
-      "10 active alerts",
-      "SMS + Email notifications",
-      "Faster polling (30s)",
-      "All booking classes",
-      "Priority support",
-    ],
-    cta: "Upgrade to Pro",
-    productId: process.env.POLAR_PRO_PRODUCT_ID,
-    highlighted: true,
-  },
-  {
-    name: "Birdie",
-    price: "$19.99",
-    period: "/month",
-    description: "Unlimited alerts for the serious golfer.",
-    features: [
-      "Unlimited alerts",
-      "SMS + Email + Push",
-      "Fastest polling (15s)",
-      "All booking classes",
+      "Unlimited active alerts",
+      "SMS & Email notifications",
+      "Real-time polling (15s)",
+      "All courses & booking classes",
       "Priority notifications",
-      "Booking window countdown",
     ],
-    cta: "Go Birdie",
-    productId: process.env.POLAR_BIRDIE_PRODUCT_ID,
-    highlighted: false,
+    cta: "Go Unlimited",
+    highlighted: true,
   },
 ];
 
 export default function PricingPage() {
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 md:py-16">
+    <div className="mx-auto max-w-4xl px-6 py-10 md:py-16">
       <div className="mb-12 text-center">
         <div className="accent-line mx-auto mb-6" />
         <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--color-cream)] sm:text-4xl">
-          Simple pricing for every golfer
+          Simple, honest pricing
         </h1>
         <p className="mx-auto mt-4 max-w-md text-[var(--color-sand-muted)]">
-          Start free. Upgrade when you need more alerts, faster polling, or SMS
-          notifications.
+          Start with a free 14-day trial. No credit card required.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         {plans.map((plan) => (
           <div
             key={plan.name}
@@ -79,7 +59,7 @@ export default function PricingPage() {
             {plan.highlighted && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="rounded-full bg-[var(--color-terracotta)] px-3 py-1 text-xs font-medium tracking-wider uppercase text-white">
-                  Most popular
+                  Best value
                 </span>
               </div>
             )}
@@ -125,36 +105,24 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            {plan.productId ? (
-              <Link href={`/api/checkout?products=${plan.productId}`}>
-                <Button
-                  className={`w-full ${
-                    plan.highlighted
-                      ? "bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
-                      : "border-[var(--color-sand)]/10 text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)]"
-                  }`}
-                  variant={plan.highlighted ? "default" : "outline"}
-                >
-                  {plan.cta}
-                </Button>
-              </Link>
-            ) : (
-              <Link href={plan.href || "/login"}>
-                <Button
-                  variant="outline"
-                  className="w-full border-[var(--color-sand)]/10 text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)]"
-                >
-                  {plan.cta}
-                </Button>
-              </Link>
-            )}
+            <Button
+              asChild
+              className={`w-full ${
+                plan.highlighted
+                  ? "bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
+                  : "border-[var(--color-sand)]/10 text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)]"
+              }`}
+              variant={plan.highlighted ? "default" : "outline"}
+            >
+              <Link href="/login">{plan.cta}</Link>
+            </Button>
           </div>
         ))}
       </div>
 
       <div className="mt-12 text-center">
         <p className="text-sm text-[var(--color-sand-muted)]">
-          All plans include access to 2,300+ golf courses across the country.
+          All plans include a 14-day free trial with full Unlimited access.
           <br />
           Cancel anytime. No questions asked.
         </p>

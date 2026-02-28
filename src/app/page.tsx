@@ -7,8 +7,8 @@ export default function HomePage() {
       {/* Hero */}
       <section className="hero-glow relative overflow-hidden">
         {/* Subtle decorative elements */}
-        <div className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] -translate-y-1/4 translate-x-1/4 rounded-full bg-[var(--color-terracotta)]/5 blur-[120px]" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-[400px] w-[400px] translate-y-1/4 -translate-x-1/4 rounded-full bg-[var(--color-sand)]/5 blur-[100px]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] -translate-y-1/4 translate-x-1/4 rounded-full bg-[var(--color-terracotta)]/8 blur-[120px]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-[400px] w-[400px] translate-y-1/4 -translate-x-1/4 rounded-full bg-[var(--color-sage)]/5 blur-[100px]" />
 
         <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center gap-8 px-6 py-28 text-center md:py-40">
           <div className="animate-fade-up">
@@ -183,7 +183,7 @@ export default function HomePage() {
             Ready to tee off?
           </h2>
           <p className="max-w-md text-[var(--color-sand-muted)]">
-            Sign up for free and create your first alert in under a minute.
+            Start your free trial and create your first alert in under a minute.
           </p>
           <Button
             asChild

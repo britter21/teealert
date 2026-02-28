@@ -1,11 +1,11 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { createServiceClient } from "@/lib/supabase/server";
 
-function tierFromProductName(name: string): "free" | "pro" | "birdie" {
+function tierFromProductName(name: string): string {
   const lower = name.toLowerCase();
-  if (lower.includes("birdie")) return "birdie";
-  if (lower.includes("pro")) return "pro";
-  return "free";
+  if (lower.includes("unlimited") || lower.includes("birdie")) return "unlimited";
+  if (lower.includes("starter") || lower.includes("pro")) return "starter";
+  return "starter";
 }
 
 export const POST = Webhooks({
@@ -89,11 +89,11 @@ export const POST = Webhooks({
       })
       .eq("id", sub.id);
 
-    // Downgrade user to free tier
+    // Downgrade user to starter tier
     if (userId) {
       await supabase
         .from("user_profiles")
-        .update({ tier: "free" })
+        .update({ tier: "starter" })
         .eq("id", userId);
     }
   },

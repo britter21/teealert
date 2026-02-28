@@ -4,54 +4,54 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── Desert Luxury Palette ── */
+/* ── Fairway Green Palette ── */
 :root {
-  --color-desert-night: #1a1614;
-  --color-surface: #211e1b;
-  --color-surface-raised: #2a2623;
-  --color-sand: #c4a882;
-  --color-sand-bright: #dcc5a0;
-  --color-sand-muted: #8a7e6e;
-  --color-terracotta: #c4734b;
-  --color-terracotta-glow: #d4885f;
-  --color-sage: #7a9478;
-  --color-cream: #f0e8da;
-  --color-bone: #e8dcc8;
-  --color-charcoal-text: #d4cfc8;
+  --color-desert-night: #0f1a14;
+  --color-surface: #151f19;
+  --color-surface-raised: #1e2b23;
+  --color-sand: #a4b89e;
+  --color-sand-bright: #c4d8be;
+  --color-sand-muted: #6b7d68;
+  --color-terracotta: #4a9e6a;
+  --color-terracotta-glow: #5cb87c;
+  --color-sage: #7ab88a;
+  --color-cream: #e4f0e0;
+  --color-bone: #cfe0ca;
+  --color-charcoal-text: #c8d4c5;
 
-  /* shadcn overrides for dark desert theme */
+  /* shadcn overrides for dark green theme */
   --radius: 0.5rem;
-  --background: #1a1614;
-  --foreground: #d4cfc8;
-  --card: #211e1b;
-  --card-foreground: #d4cfc8;
-  --popover: #211e1b;
-  --popover-foreground: #d4cfc8;
-  --primary: #c4a882;
-  --primary-foreground: #1a1614;
-  --secondary: #2a2623;
-  --secondary-foreground: #c4a882;
-  --muted: #2a2623;
-  --muted-foreground: #8a7e6e;
-  --accent: #2a2623;
-  --accent-foreground: #c4a882;
-  --destructive: #c4734b;
-  --border: rgba(196, 168, 130, 0.12);
-  --input: rgba(196, 168, 130, 0.15);
-  --ring: #c4a882;
-  --chart-1: #c4734b;
-  --chart-2: #7a9478;
-  --chart-3: #c4a882;
-  --chart-4: #dcc5a0;
-  --chart-5: #8a7e6e;
-  --sidebar: #211e1b;
-  --sidebar-foreground: #d4cfc8;
-  --sidebar-primary: #c4a882;
-  --sidebar-primary-foreground: #1a1614;
-  --sidebar-accent: #2a2623;
-  --sidebar-accent-foreground: #c4a882;
-  --sidebar-border: rgba(196, 168, 130, 0.12);
-  --sidebar-ring: #c4a882;
+  --background: #0f1a14;
+  --foreground: #c8d4c5;
+  --card: #151f19;
+  --card-foreground: #c8d4c5;
+  --popover: #151f19;
+  --popover-foreground: #c8d4c5;
+  --primary: #a4b89e;
+  --primary-foreground: #0f1a14;
+  --secondary: #1e2b23;
+  --secondary-foreground: #a4b89e;
+  --muted: #1e2b23;
+  --muted-foreground: #6b7d68;
+  --accent: #1e2b23;
+  --accent-foreground: #a4b89e;
+  --destructive: #c45b5b;
+  --border: rgba(164, 184, 158, 0.12);
+  --input: rgba(164, 184, 158, 0.15);
+  --ring: #a4b89e;
+  --chart-1: #4a9e6a;
+  --chart-2: #7ab88a;
+  --chart-3: #a4b89e;
+  --chart-4: #c4d8be;
+  --chart-5: #6b7d68;
+  --sidebar: #151f19;
+  --sidebar-foreground: #c8d4c5;
+  --sidebar-primary: #a4b89e;
+  --sidebar-primary-foreground: #0f1a14;
+  --sidebar-accent: #1e2b23;
+  --sidebar-accent-foreground: #a4b89e;
+  --sidebar-border: rgba(164, 184, 158, 0.12);
+  --sidebar-ring: #a4b89e;
 }
 
 @theme inline {
@@ -120,11 +120,11 @@ body::before {
   background-size: 256px 256px;
 }
 
-/* ── Warm glow gradient for hero ── */
+/* ── Green glow gradient for hero ── */
 .hero-glow {
   background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(196, 115, 75, 0.15) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(196, 168, 130, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(74, 158, 106, 0.15) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(164, 184, 158, 0.08) 0%, transparent 60%),
     var(--color-desert-night);
 }
 
@@ -156,8 +156,8 @@ body::before {
 }
 .course-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(196, 115, 75, 0.08);
-  border-color: rgba(196, 168, 130, 0.25);
+  box-shadow: 0 8px 30px rgba(74, 158, 106, 0.08);
+  border-color: rgba(164, 184, 158, 0.25);
 }
 
 /* ── Horizontal rule accent ── */

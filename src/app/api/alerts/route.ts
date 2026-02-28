@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   if (!quota.allowed) {
     return Response.json(
       {
-        error: `Alert limit reached (${quota.current}/${quota.limit}). Upgrade to ${quota.tier === "free" ? "Pro" : "Birdie"} for more alerts.`,
+        error: `Alert limit reached (${quota.current}/${quota.limit}). Upgrade to Unlimited for more alerts.`,
         code: "ALERT_LIMIT",
         tier: quota.tier,
         current: quota.current,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
   if (body.notify_sms && !(await canUseChannel(user.id, "sms"))) {
     return Response.json(
       {
-        error: "SMS notifications require a Pro or Birdie plan.",
+        error: "SMS notifications require an active subscription.",
         code: "CHANNEL_RESTRICTED",
       },
       { status: 403 }

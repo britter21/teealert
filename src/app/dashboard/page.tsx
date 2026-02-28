@@ -41,10 +41,14 @@ interface AccountInfo {
   maxAlerts: number | null;
   channels: string[];
   pollIntervalSeconds: number;
+  isTrial?: boolean;
+  trialDaysRemaining?: number;
 }
 
 const tierColors: Record<string, string> = {
   free: "bg-[var(--color-sand)]/10 text-[var(--color-sand-muted)]",
+  starter: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
+  unlimited: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
   pro: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
   birdie: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
 };
@@ -116,8 +120,9 @@ export default function DashboardPage() {
               {account.alertCount}/{account.maxAlerts ?? "\u221E"} alerts used
               {" \u00B7 "}
               {account.pollIntervalSeconds}s polling
-              {" \u00B7 "}
-              {account.channels.join(", ")}
+              {account.isTrial && account.trialDaysRemaining != null && (
+                <>{" \u00B7 "}<span className="text-[var(--color-terracotta)]">{account.trialDaysRemaining}d left in trial</span></>
+              )}
             </p>
           )}
           {!account && (
@@ -127,7 +132,7 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {account?.tier === "free" && (
+          {(account?.tier === "starter" || account?.tier === "free" || account?.isTrial) && (
             <Button
               asChild
               variant="outline"
@@ -137,7 +142,7 @@ export default function DashboardPage() {
               <Link href="/pricing">Upgrade</Link>
             </Button>
           )}
-          {account?.tier !== "free" && (
+          {!account?.isTrial && account?.tier !== "starter" && account?.tier !== "free" && (
             <Button
               asChild
               variant="outline"
