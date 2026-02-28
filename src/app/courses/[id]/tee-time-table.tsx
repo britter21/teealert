@@ -13,6 +13,14 @@ interface TeeTime {
   cartFee?: number;
 }
 
+function formatTime12h(time: string): string {
+  const [hStr, mStr] = time.split(":");
+  const h = parseInt(hStr, 10);
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hour12}:${mStr} ${suffix}`;
+}
+
 interface Props {
   courseId: string;
   defaultDate: string;
@@ -140,7 +148,7 @@ export function TeeTimeTable({ courseId, defaultDate }: Props) {
                     }`}
                   >
                     <td className="px-4 py-3.5 font-medium text-[var(--color-sand-bright)]">
-                      {t.time}
+                      {formatTime12h(t.time)}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-[var(--color-charcoal-text)]">
                       {t.holes}
