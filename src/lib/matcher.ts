@@ -30,7 +30,6 @@ interface Alert {
   notify_email: boolean;
   is_recurring: boolean;
   recurrence_days: number[] | null;
-  users: { email: string | null };
   user_profiles: { phone: string | null } | null;
 }
 
@@ -56,14 +55,19 @@ export async function matchAndNotify(
 
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: alerts } = await supabase
+  const { data: alerts, error: alertError } = await supabase
     .from("alerts")
-    .select("*, users:user_id(email), user_profiles:user_id(phone)")
+    .select("*, user_profiles!alerts_user_profiles_fkey(phone)")
     .eq("course_id", courseId)
     .eq("target_date", targetDate)
     .eq("is_active", true)
     .is("triggered_at", null)
     .lte("start_monitoring_date", today);
+
+  if (alertError) {
+    console.error("Alert query error:", alertError.message);
+    return [];
+  }
 
   if (!alerts || alerts.length === 0) return [];
 
