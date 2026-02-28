@@ -98,6 +98,7 @@ function mapV2(data: ChronogolfV2Response): TeeTime[] {
     time: slot.start_time,
     holes: slot.course?.holes || 18,
     availableSpots: slot.max_player_size,
+    minPlayers: slot.min_player_size,
     greenFee: slot.default_price.green_fee,
     raw: slot as unknown as Record<string, unknown>,
   }));

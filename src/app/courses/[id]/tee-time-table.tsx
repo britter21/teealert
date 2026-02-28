@@ -17,6 +17,7 @@ interface TeeTime {
   time: string;
   holes: number;
   availableSpots: number;
+  minPlayers?: number;
   greenFee: number;
   cartFee?: number;
 }
@@ -207,7 +208,7 @@ export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId
                     Holes
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-sand-muted)]">
-                    Spots
+                    Players
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-sand-muted)]">
                     Green Fee
@@ -235,7 +236,11 @@ export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId
                       {t.availableSpots !== 0 ? (
                         <span className="inline-flex items-center gap-1.5 text-sm text-[var(--color-sage)]">
                           <span className="pulse-available h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" />
-                          {t.availableSpots < 0 ? "Open" : t.availableSpots}
+                          {t.availableSpots < 0
+                            ? "Open"
+                            : t.minPlayers && t.minPlayers < t.availableSpots
+                              ? `${t.minPlayers}\u2013${t.availableSpots}`
+                              : t.availableSpots}
                         </span>
                       ) : (
                         <span className="text-sm text-[var(--color-sand-muted)]">

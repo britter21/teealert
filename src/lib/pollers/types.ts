@@ -1,7 +1,8 @@
 export interface TeeTime {
   time: string; // "08:30"
   holes: number; // 9 | 18
-  availableSpots: number;
+  availableSpots: number; // -1 = available but unknown count
+  minPlayers?: number; // Chronogolf v2: minimum group size required
   greenFee: number;
   cartFee?: number;
   raw: Record<string, unknown>;
