@@ -85,7 +85,7 @@ export async function pollChronogolf(
     .map((slot) => ({
       time: slot.start_time, // Already "HH:MM" format
       holes: 18,
-      availableSpots: slot.out_of_capacity ? 0 : 4,
+      availableSpots: slot.out_of_capacity ? 0 : -1, // -1 = available but count unknown
       greenFee: slot.green_fees[0].green_fee,
       raw: slot as unknown as Record<string, unknown>,
     }));

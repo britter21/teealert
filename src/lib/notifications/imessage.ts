@@ -18,7 +18,7 @@ export async function sendIMessage(
     .slice(0, 5)
     .map(
       (t) =>
-        `${t.time} - ${t.availableSpots} spots | ${t.holes}h | $${t.greenFee}`
+        `${t.time} - ${t.availableSpots < 0 ? "open" : `${t.availableSpots} spots`} | ${t.holes}h | $${t.greenFee}`
     )
     .join("\n");
 

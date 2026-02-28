@@ -94,7 +94,7 @@ export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId
     fetchTimes(date, selectedClass);
   }, [date, selectedClass, fetchTimes, bookingClasses.length]);
 
-  const available = times.filter((t) => t.availableSpots > 0);
+  const available = times.filter((t) => t.availableSpots !== 0);
   const showClassSelector = bookingClasses.filter((c) => !c.is_protected).length > 1;
 
   return (
@@ -232,10 +232,10 @@ export function TeeTimeTable({ courseId, defaultDate, platform, platformCourseId
                       {t.holes}
                     </td>
                     <td className="px-4 py-3.5">
-                      {t.availableSpots > 0 ? (
+                      {t.availableSpots !== 0 ? (
                         <span className="inline-flex items-center gap-1.5 text-sm text-[var(--color-sage)]">
                           <span className="pulse-available h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" />
-                          {t.availableSpots}
+                          {t.availableSpots < 0 ? "Open" : t.availableSpots}
                         </span>
                       ) : (
                         <span className="text-sm text-[var(--color-sand-muted)]">

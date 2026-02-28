@@ -36,7 +36,8 @@ interface Alert {
 function matchesAlert(t: TeeTime, alert: Alert): boolean {
   if (alert.earliest_time && t.time < alert.earliest_time) return false;
   if (alert.latest_time && t.time > alert.latest_time) return false;
-  if (t.availableSpots < alert.min_players) return false;
+  // -1 means available but count unknown (Chronogolf) — treat as matching
+  if (t.availableSpots >= 0 && t.availableSpots < alert.min_players) return false;
   if (alert.max_price && t.greenFee > alert.max_price) return false;
   if (alert.holes && alert.holes.length > 0 && !alert.holes.includes(t.holes))
     return false;
