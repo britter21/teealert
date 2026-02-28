@@ -1,16 +1,16 @@
 #!/usr/bin/env -S tsx
 /**
- * Local Chronogolf relay server.
+ * Local relay server for TeeAlert.
  *
- * Runs on the Mac mini to bypass Cloudflare's TLS fingerprinting.
- * Uses curl subprocess (which has a trusted TLS fingerprint) instead of
- * Node.js fetch (which Cloudflare detects and blocks).
+ * Runs on the Mac mini. Handles:
+ *   1. Chronogolf API proxying (curl-based TLS fingerprint bypass)
+ *   2. iMessage sending via osascript (Messages.app must be logged in)
  *
  * Usage:
  *   RELAY_SECRET=your-secret tsx scripts/chronogolf-relay.ts
  *
  * Keep running with pm2:
- *   pm2 start scripts/chronogolf-relay.ts --interpreter tsx --name chronogolf-relay
+ *   pm2 start scripts/chronogolf-relay.ts --interpreter tsx --name relay
  */
 
 import { createServer, IncomingMessage, ServerResponse } from "http";
@@ -29,6 +29,30 @@ if (!RELAY_SECRET) {
 
 const CHRONOGOLF_V1_BASE = "https://www.chronogolf.com/marketplace/clubs";
 const CHRONOGOLF_V2_BASE = "https://www.chronogolf.com/marketplace/v2/teetimes";
+
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on("data", (c) => chunks.push(c));
+    req.on("end", () => resolve(Buffer.concat(chunks).toString()));
+    req.on("error", reject);
+  });
+}
+
+async function sendIMessageLocal(phone: string, message: string): Promise<void> {
+  const escaped = message
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n");
+
+  const script = `tell application "Messages"
+  set targetService to 1st account whose service type = iMessage
+  set targetBuddy to participant "${phone}" of targetService
+  send "${escaped}" to targetBuddy
+end tell`;
+
+  await execFileAsync("osascript", ["-e", script], { timeout: 10000 });
+}
 
 function parseQuery(url: string): Record<string, string> {
   const q: Record<string, string> = {};
@@ -145,12 +169,44 @@ const httpServer = createServer(
       return;
     }
 
+    // iMessage sending endpoint
+    if (req.url?.startsWith("/imessage") && req.method === "POST") {
+      try {
+        const body = JSON.parse(await readBody(req));
+        const { phone, message } = body;
+
+        if (!phone || !message) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "phone and message required" }));
+          return;
+        }
+
+        await sendIMessageLocal(phone, message);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: true }));
+
+        console.log(
+          `[${new Date().toISOString()}] imessage to=${phone.slice(0, 4)}...${phone.slice(-4)} len=${message.length} status=sent`
+        );
+      } catch (err) {
+        const errMsg = (err as Error).message;
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: errMsg }));
+
+        console.error(
+          `[${new Date().toISOString()}] imessage FAILED: ${errMsg}`
+        );
+      }
+      return;
+    }
+
     res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found. Use /teetimes or /health" }));
+    res.end(JSON.stringify({ error: "Not found. Use /teetimes, /imessage, or /health" }));
   }
 );
 
 httpServer.listen(PORT, () => {
-  console.log(`Chronogolf relay listening on http://localhost:${PORT}`);
-  console.log("Using curl subprocess for Cloudflare-compatible TLS fingerprint");
+  console.log(`TeeAlert relay listening on http://localhost:${PORT}`);
+  console.log("Endpoints: /teetimes (Chronogolf proxy), /imessage (iMessage sender), /health");
 });

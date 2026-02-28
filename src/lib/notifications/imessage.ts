@@ -4,16 +4,14 @@ import type { TeeTime } from "../pollers/types";
 
 const execAsync = promisify(exec);
 
-/**
- * Send an iMessage via osascript (only works on macOS with Messages app logged in).
- * For Vercel deployment, this would need a local relay server on the Mac mini.
- */
-export async function sendIMessage(
-  phoneNumber: string,
+const RELAY_URL = process.env.CHRONOGOLF_RELAY_URL;
+const RELAY_SECRET = process.env.CHRONOGOLF_RELAY_SECRET;
+
+function formatMessage(
   courseName: string,
   times: TeeTime[],
   bookingUrl?: string
-): Promise<void> {
+): string {
   const timeLines = times
     .slice(0, 5)
     .map(
@@ -22,17 +20,46 @@ export async function sendIMessage(
     )
     .join("\n");
 
-  const parts = [
-    "TEE TIME ALERT",
-    courseName,
-    "",
-    timeLines,
-  ];
+  const parts = ["TEE TIME ALERT", courseName, "", timeLines];
   if (bookingUrl) {
     parts.push("", `Book now: ${bookingUrl}`);
   }
-  const message = parts.join("\n");
+  return parts.join("\n");
+}
 
+/**
+ * Send an iMessage.
+ *
+ * If CHRONOGOLF_RELAY_URL is set, POSTs to the relay server on the Mac mini.
+ * Otherwise falls back to local osascript (only works on macOS).
+ */
+export async function sendIMessage(
+  phoneNumber: string,
+  courseName: string,
+  times: TeeTime[],
+  bookingUrl?: string
+): Promise<void> {
+  const message = formatMessage(courseName, times, bookingUrl);
+
+  // Production: send via relay server on Mac mini
+  if (RELAY_URL && RELAY_SECRET) {
+    const res = await fetch(`${RELAY_URL}/imessage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Relay-Secret": RELAY_SECRET,
+      },
+      body: JSON.stringify({ phone: phoneNumber, message }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`iMessage relay failed (${res.status}): ${body}`);
+    }
+    return;
+  }
+
+  // Local dev: send via osascript directly
   const escaped = message
     .replace(/\\/g, "\\\\")
     .replace(/"/g, '\\"')

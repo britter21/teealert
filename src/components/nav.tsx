@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { User } from "@supabase/supabase-js";
 
+const ADMIN_USER_ID = "3cefdaf3-2f71-4c83-88c3-dfe2f080ebe1";
+
 const publicLinks = [
   { href: "/courses", label: "Courses" },
   { href: "/pricing", label: "Pricing" },
@@ -16,6 +18,10 @@ const publicLinks = [
 const authLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/settings", label: "Settings" },
+];
+
+const adminLinks = [
+  { href: "/admin", label: "Admin" },
 ];
 
 export function Nav() {
@@ -69,7 +75,7 @@ export function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 text-sm md:flex">
-          {[...publicLinks, ...(user ? authLinks : [])].map((link) => (
+          {[...publicLinks, ...(user ? authLinks : []), ...(user?.id === ADMIN_USER_ID ? adminLinks : [])].map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -136,7 +142,7 @@ export function Nav() {
               className="w-72 border-l border-[var(--color-sand)]/10 bg-[var(--color-surface)]"
             >
               <div className="mt-10 flex flex-col gap-1">
-                {[...publicLinks, ...(user ? authLinks : [])].map((link) => (
+                {[...publicLinks, ...(user ? authLinks : []), ...(user?.id === ADMIN_USER_ID ? adminLinks : [])].map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
