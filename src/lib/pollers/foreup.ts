@@ -19,16 +19,16 @@ export async function pollForeUp(
     api_key: "no_limits",
   });
 
-  if (course.platformBookingClass) {
-    params.set("booking_class", course.platformBookingClass);
+  if (course.platform_booking_class) {
+    params.set("booking_class", course.platform_booking_class);
   }
-  if (course.platformScheduleId) {
-    params.set("schedule_id", course.platformScheduleId);
-    params.set("schedule_ids[]", course.platformScheduleId);
+  if (course.platform_schedule_id) {
+    params.set("schedule_id", course.platform_schedule_id);
+    params.set("schedule_ids[]", course.platform_schedule_id);
   }
 
   const resp = await fetch(`${FOREUP_BASE}?${params}`, {
-    headers: { "User-Agent": course.uaOverride || IPHONE_UA },
+    headers: { "User-Agent": course.ua_override || IPHONE_UA },
     cache: "no-store",
   });
 

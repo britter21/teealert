@@ -7,14 +7,15 @@ export interface TeeTime {
   raw: Record<string, unknown>;
 }
 
+// Matches Supabase snake_case column names
 export interface Course {
   id: string;
   name: string;
   platform: "foreup" | "chronogolf";
-  platformCourseId: string;
-  platformScheduleId: string | null;
-  platformBookingClass: string | null;
+  platform_course_id: string;
+  platform_schedule_id: string | null;
+  platform_booking_class: string | null;
   timezone: string;
-  uaOverride: string | null;
-  pollIntervalSeconds: number;
+  ua_override: string | null;
+  poll_interval_seconds: number;
 }

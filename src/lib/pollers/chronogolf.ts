@@ -9,7 +9,7 @@ export async function pollChronogolf(
 ): Promise<TeeTime[]> {
   const params = new URLSearchParams({
     start_date: targetDate, // YYYY-MM-DD
-    course_ids: course.platformCourseId,
+    course_ids: course.platform_course_id,
     holes: "9,18",
     page: "1",
   });
