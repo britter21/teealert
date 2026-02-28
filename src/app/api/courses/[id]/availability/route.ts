@@ -4,6 +4,8 @@ import { pollChronogolf } from "@/lib/pollers/chronogolf";
 import type { Course } from "@/lib/pollers/types";
 import { NextRequest } from "next/server";
 
+export const runtime = "edge";
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
