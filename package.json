@@ -9,9 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@polar-sh/nextjs": "^0.9.3",
+    "@polar-sh/sdk": "^0.45.1",
+    "@sentry/nextjs": "^10.40.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
     "@upstash/qstash": "^2.9.0",
+    "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

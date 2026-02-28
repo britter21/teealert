@@ -25,17 +25,33 @@ interface Alert {
   };
 }
 
+interface AccountInfo {
+  tier: string;
+  alertCount: number;
+  maxAlerts: number | null;
+  channels: string[];
+  pollIntervalSeconds: number;
+}
+
+const tierColors: Record<string, string> = {
+  free: "bg-[var(--color-sand)]/10 text-[var(--color-sand-muted)]",
+  pro: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
+  birdie: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
+};
+
 export default function DashboardPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [account, setAccount] = useState<AccountInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const res = await fetch("/api/alerts");
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data);
-      }
+      const [alertsRes, accountRes] = await Promise.all([
+        fetch("/api/alerts"),
+        fetch("/api/account"),
+      ]);
+      if (alertsRes.ok) setAlerts(await alertsRes.json());
+      if (accountRes.ok) setAccount(await accountRes.json());
     } finally {
       setLoading(false);
     }
@@ -71,22 +87,62 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 md:py-16">
-      <div className="mb-10 flex items-start justify-between">
+      <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="accent-line mb-6" />
-          <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--color-cream)] sm:text-4xl">
-            Dashboard
-          </h1>
-          <p className="mt-3 text-[var(--color-sand-muted)]">
-            Manage your tee time alerts.
-          </p>
+          <div className="flex items-center gap-3">
+            <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--color-cream)] sm:text-4xl">
+              Dashboard
+            </h1>
+            {account && (
+              <Badge className={`border-0 text-xs uppercase tracking-wider ${tierColors[account.tier] || tierColors.free}`}>
+                {account.tier}
+              </Badge>
+            )}
+          </div>
+          {account && (
+            <p className="mt-3 text-[var(--color-sand-muted)]">
+              {account.alertCount}/{account.maxAlerts ?? "\u221E"} alerts used
+              {" \u00B7 "}
+              {account.pollIntervalSeconds}s polling
+              {" \u00B7 "}
+              {account.channels.join(", ")}
+            </p>
+          )}
+          {!account && (
+            <p className="mt-3 text-[var(--color-sand-muted)]">
+              Manage your tee time alerts.
+            </p>
+          )}
         </div>
-        <Button
-          asChild
-          className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
-        >
-          <Link href="/courses">Create Alert</Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          {account?.tier === "free" && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-[var(--color-terracotta)]/30 text-[var(--color-terracotta)] hover:bg-[var(--color-terracotta)]/5 hover:text-[var(--color-terracotta)]"
+            >
+              <Link href="/pricing">Upgrade</Link>
+            </Button>
+          )}
+          {account?.tier !== "free" && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-[var(--color-sand)]/10 text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
+            >
+              <Link href="/api/portal">Manage Subscription</Link>
+            </Button>
+          )}
+          <Button
+            asChild
+            className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
+          >
+            <Link href="/courses">Create Alert</Link>
+          </Button>
+        </div>
       </div>
 
       {alerts.length === 0 ? (
