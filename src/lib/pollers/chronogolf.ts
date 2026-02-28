@@ -14,6 +14,7 @@ interface ChronogolfSlot {
   out_of_capacity: boolean;
   frozen: boolean;
   green_fees: { green_fee: number; affiliation_type_id: number }[];
+  restrictions: unknown[];
 }
 
 async function fetchTeetimes(
@@ -76,13 +77,16 @@ export async function pollChronogolf(
     .filter((slot) => {
       if (courseIdFilter && slot.course_id !== courseIdFilter) return false;
       if (slot.frozen) return false;
+      // Skip slots with no green fee data — they have restrictions
+      // that make them unbookable for public users
+      if (!slot.green_fees || slot.green_fees.length === 0) return false;
       return true;
     })
     .map((slot) => ({
       time: slot.start_time, // Already "HH:MM" format
       holes: 18,
       availableSpots: slot.out_of_capacity ? 0 : 4,
-      greenFee: slot.green_fees?.[0]?.green_fee ?? 0,
+      greenFee: slot.green_fees[0].green_fee,
       raw: slot as unknown as Record<string, unknown>,
     }));
 }
