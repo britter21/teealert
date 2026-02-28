@@ -12,6 +12,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const date = request.nextUrl.searchParams.get("date");
+  const bookingClassOverride = request.nextUrl.searchParams.get("booking_class");
 
   if (!date) {
     return Response.json({ error: "date parameter required (YYYY-MM-DD)" }, { status: 400 });
@@ -26,6 +27,20 @@ export async function GET(
 
   if (error || !course) {
     return Response.json({ error: "Course not found" }, { status: 404 });
+  }
+
+  // Allow overriding the booking class if it exists for this course
+  if (bookingClassOverride) {
+    const { count } = await supabase
+      .from("course_booking_classes")
+      .select("*", { count: "exact", head: true })
+      .eq("course_id", id)
+      .eq("platform_booking_class_id", bookingClassOverride);
+
+    if (!count) {
+      return Response.json({ error: "Invalid booking class" }, { status: 400 });
+    }
+    course.platform_booking_class = bookingClassOverride;
   }
 
   try {

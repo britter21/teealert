@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TeeTime {
   time: string;
@@ -11,6 +18,13 @@ interface TeeTime {
   availableSpots: number;
   greenFee: number;
   cartFee?: number;
+}
+
+interface BookingClass {
+  platform_booking_class_id: string;
+  name: string;
+  is_default: boolean;
+  is_protected: boolean;
 }
 
 function formatTime12h(time: string): string {
@@ -31,14 +45,31 @@ export function TeeTimeTable({ courseId, defaultDate }: Props) {
   const [times, setTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [bookingClasses, setBookingClasses] = useState<BookingClass[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>("");
+
+  // Fetch booking classes on mount
+  useEffect(() => {
+    fetch(`/api/courses/${courseId}/booking-classes`)
+      .then((r) => r.json())
+      .then((data) => {
+        const classes: BookingClass[] = data.bookingClasses || [];
+        setBookingClasses(classes);
+        const def = classes.find((c) => c.is_default);
+        if (def) setSelectedClass(def.platform_booking_class_id);
+      })
+      .catch(() => {});
+  }, [courseId]);
 
   const fetchTimes = useCallback(
-    async (d: string) => {
+    async (d: string, bc: string) => {
       setLoading(true);
       setError("");
       try {
+        const params = new URLSearchParams({ date: d });
+        if (bc) params.set("booking_class", bc);
         const res = await fetch(
-          `/api/courses/${courseId}/availability?date=${d}`
+          `/api/courses/${courseId}/availability?${params}`
         );
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to fetch");
@@ -53,16 +84,19 @@ export function TeeTimeTable({ courseId, defaultDate }: Props) {
     [courseId]
   );
 
+  // Fetch tee times when date or booking class changes
   useEffect(() => {
-    fetchTimes(date);
-  }, [date, fetchTimes]);
+    if (!selectedClass && bookingClasses.length > 0) return;
+    fetchTimes(date, selectedClass);
+  }, [date, selectedClass, fetchTimes, bookingClasses.length]);
 
   const available = times.filter((t) => t.availableSpots > 0);
+  const showClassSelector = bookingClasses.filter((c) => !c.is_protected).length > 1;
 
   return (
     <div>
-      {/* Date picker */}
-      <div className="mb-6 flex items-end gap-4">
+      {/* Date picker + Rate selector */}
+      <div className="mb-6 flex flex-wrap items-end gap-4">
         <div className="grid gap-2">
           <Label
             htmlFor="date"
@@ -78,6 +112,35 @@ export function TeeTimeTable({ courseId, defaultDate }: Props) {
             className="w-44 border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
           />
         </div>
+
+        {showClassSelector && (
+          <div className="grid gap-2">
+            <Label
+              htmlFor="booking-class"
+              className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+            >
+              Rate
+            </Label>
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-56 border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]">
+                <SelectValue placeholder="Select rate..." />
+              </SelectTrigger>
+              <SelectContent className="border-[var(--color-sand)]/10 bg-[var(--color-surface)] text-[var(--color-charcoal-text)]">
+                {bookingClasses
+                  .filter((bc) => !bc.is_protected)
+                  .map((bc) => (
+                    <SelectItem
+                      key={bc.platform_booking_class_id}
+                      value={bc.platform_booking_class_id}
+                    >
+                      {bc.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {loading && (
           <div className="flex items-center gap-2 pb-2">
             <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--color-sand)]/20 border-t-[var(--color-terracotta)]" />
