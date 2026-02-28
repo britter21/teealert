@@ -34,7 +34,10 @@ export async function pollChronogolf(
     {
       headers: {
         "User-Agent": course.ua_override || DEFAULT_UA,
-        Accept: "application/json",
+        Accept: "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        Referer: "https://www.chronogolf.com/",
+        Origin: "https://www.chronogolf.com",
       },
       cache: "no-store",
     }
