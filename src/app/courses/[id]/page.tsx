@@ -37,12 +37,6 @@ export default async function CourseDetailPage({ params }: Props) {
               .join(", ")}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Badge
-              variant="secondary"
-              className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
-            >
-              {course.platform}
-            </Badge>
             {course.booking_window_days && (
               <Badge
                 variant="outline"
