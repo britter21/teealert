@@ -1,12 +1,14 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { publicRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
-
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  const rl = await publicRateLimit.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
   const { id } = await params;
   const supabase = createServiceClient();
 

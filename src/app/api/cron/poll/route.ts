@@ -142,8 +142,3 @@ async function handler() {
 }
 
 export const POST = verifySignatureAppRouter(handler);
-
-// Allow GET for manual testing (no QStash signature verification)
-export async function GET() {
-  return handler();
-}

@@ -16,6 +16,26 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const body = await request.json();
 
+  // Input validation
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const TIME_RE = /^\d{2}:\d{2}$/;
+
+  if (body.target_date !== undefined && !DATE_RE.test(body.target_date)) {
+    return Response.json({ error: "Invalid target_date (YYYY-MM-DD)" }, { status: 400 });
+  }
+  if (body.earliest_time && !TIME_RE.test(body.earliest_time)) {
+    return Response.json({ error: "Invalid earliest_time (HH:MM)" }, { status: 400 });
+  }
+  if (body.latest_time && !TIME_RE.test(body.latest_time)) {
+    return Response.json({ error: "Invalid latest_time (HH:MM)" }, { status: 400 });
+  }
+  if (body.min_players != null && (body.min_players < 1 || body.min_players > 4)) {
+    return Response.json({ error: "min_players must be 1-4" }, { status: 400 });
+  }
+  if (body.start_monitoring_date && !DATE_RE.test(body.start_monitoring_date)) {
+    return Response.json({ error: "Invalid start_monitoring_date (YYYY-MM-DD)" }, { status: 400 });
+  }
+
   // Only allow updating specific fields
   const allowed: Record<string, unknown> = {};
   if (body.target_date !== undefined) allowed.target_date = body.target_date;

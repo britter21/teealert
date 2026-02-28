@@ -1,15 +1,17 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { pollForeUp } from "@/lib/pollers/foreup";
 import { pollChronogolf } from "@/lib/pollers/chronogolf";
+import { publicRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import type { Course } from "@/lib/pollers/types";
 import { NextRequest } from "next/server";
-
-export const runtime = "edge";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
+  const rl = await publicRateLimit.limit(ip);
+  if (!rl.success) return rateLimitResponse(rl.reset);
   const { id } = await params;
   const date = request.nextUrl.searchParams.get("date");
   const bookingClassOverride = request.nextUrl.searchParams.get("booking_class");
