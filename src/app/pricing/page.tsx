@@ -18,7 +18,7 @@ const plans = [
   },
   {
     name: "Unlimited",
-    price: "$9.99",
+    price: "$4.99",
     period: "/month",
     description: "Unlimited alerts with real-time monitoring.",
     features: [
