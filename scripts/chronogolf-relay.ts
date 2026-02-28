@@ -27,7 +27,8 @@ if (!RELAY_SECRET) {
   process.exit(1);
 }
 
-const CHRONOGOLF_BASE = "https://www.chronogolf.com/marketplace/clubs";
+const CHRONOGOLF_V1_BASE = "https://www.chronogolf.com/marketplace/clubs";
+const CHRONOGOLF_V2_BASE = "https://www.chronogolf.com/marketplace/v2/teetimes";
 
 function parseQuery(url: string): Record<string, string> {
   const q: Record<string, string> = {};
@@ -82,6 +83,40 @@ const httpServer = createServer(
 
     if (req.url?.startsWith("/teetimes")) {
       const q = parseQuery(req.url);
+
+      // v2 API: uses course UUIDs instead of club numeric IDs
+      if (q.version === "v2") {
+        const { start_date, course_ids, holes, page } = q;
+
+        if (!start_date || !course_ids) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "start_date and course_ids required for v2" }));
+          return;
+        }
+
+        const params = new URLSearchParams({
+          start_date,
+          course_ids,
+          holes: holes || "9,18",
+          page: page || "1",
+        });
+
+        const targetUrl = `${CHRONOGOLF_V2_BASE}?${params}`;
+        const { status, body } = await curlChronogolf(targetUrl);
+
+        res.writeHead(status, {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        });
+        res.end(body);
+
+        console.log(
+          `[${new Date().toISOString()}] v2 course=${course_ids.slice(0, 8)} date=${start_date} status=${status} bytes=${body.length}`
+        );
+        return;
+      }
+
+      // v1 API: uses club numeric IDs
       const { club_id, date, holes, affiliation_type_ids } = q;
 
       if (!club_id || !date) {
@@ -95,7 +130,7 @@ const httpServer = createServer(
         params.set("affiliation_type_ids", affiliation_type_ids);
       }
 
-      const targetUrl = `${CHRONOGOLF_BASE}/${club_id}/teetimes?${params}`;
+      const targetUrl = `${CHRONOGOLF_V1_BASE}/${club_id}/teetimes?${params}`;
       const { status, body } = await curlChronogolf(targetUrl);
 
       res.writeHead(status, {
@@ -105,7 +140,7 @@ const httpServer = createServer(
       res.end(body);
 
       console.log(
-        `[${new Date().toISOString()}] club=${club_id} date=${date} status=${status} bytes=${body.length}`
+        `[${new Date().toISOString()}] v1 club=${club_id} date=${date} status=${status} bytes=${body.length}`
       );
       return;
     }
