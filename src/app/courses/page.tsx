@@ -371,6 +371,24 @@ export default function CoursesPage() {
               </Button>
             </div>
           )}
+
+          {/* Don't see your course? */}
+          <div className="mt-10 rounded-xl border border-dashed border-[var(--color-sand)]/10 bg-[var(--color-surface)]/50 px-6 py-8 text-center">
+            <p className="mb-1 text-sm font-medium text-[var(--color-sand)]">
+              Don&apos;t see your course?
+            </p>
+            <p className="mb-4 text-sm text-[var(--color-sand-muted)]">
+              Let us know and we&apos;ll work on adding it.
+            </p>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-[var(--color-terracotta)]/30 text-[var(--color-terracotta)] hover:bg-[var(--color-terracotta)]/5 hover:text-[var(--color-terracotta)]"
+            >
+              <Link href="/support?category=missing_course">Request a Course</Link>
+            </Button>
+          </div>
         </>
       )}
     </div>

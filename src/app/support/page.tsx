@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,16 @@ const CATEGORIES = [
 
 export default function SupportPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
 
-  const [category, setCategory] = useState("");
+  const initialCategory = searchParams.get("category") || "";
+  const [category, setCategory] = useState(
+    CATEGORIES.some((c) => c.value === initialCategory) ? initialCategory : ""
+  );
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [courseName, setCourseName] = useState("");
