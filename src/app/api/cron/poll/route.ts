@@ -6,7 +6,10 @@ import { diffAndDetectNew } from "@/lib/diff";
 import { matchAndNotify } from "@/lib/matcher";
 import type { Course, TeeTime } from "@/lib/pollers/types";
 
-async function pollCourse(course: Course, targetDate: string): Promise<TeeTime[]> {
+async function pollCourse(
+  course: Course,
+  targetDate: string
+): Promise<TeeTime[]> {
   switch (course.platform) {
     case "foreup": {
       // ForeUp expects MM-DD-YYYY
@@ -20,10 +23,28 @@ async function pollCourse(course: Course, targetDate: string): Promise<TeeTime[]
   }
 }
 
+function getTargetDates(bookingWindowDays: number | null): string[] {
+  const dates: string[] = [];
+  const now = new Date();
+
+  // Always poll tomorrow
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  dates.push(tomorrow.toISOString().split("T")[0]);
+
+  // Poll the booking window edge (where new times appear)
+  if (bookingWindowDays && bookingWindowDays > 1) {
+    const edge = new Date(now);
+    edge.setDate(edge.getDate() + bookingWindowDays);
+    dates.push(edge.toISOString().split("T")[0]);
+  }
+
+  return [...new Set(dates)]; // dedupe
+}
+
 async function handler() {
   const supabase = createServiceClient();
 
-  // Get all active courses that have at least one active alert
   const { data: courses, error } = await supabase
     .from("courses")
     .select("*")
@@ -37,56 +58,49 @@ async function handler() {
     return Response.json({ polled: 0, message: "No active courses" });
   }
 
-  const results = await Promise.allSettled(
-    courses.map(async (course) => {
-      // Calculate target date based on booking window
-      const now = new Date();
-      const targetDate = new Date(now);
-      if (course.booking_window_days) {
-        targetDate.setDate(targetDate.getDate() + course.booking_window_days);
+  const allResults: Record<string, unknown>[] = [];
+
+  for (const course of courses) {
+    const dates = getTargetDates(course.booking_window_days);
+
+    for (const dateStr of dates) {
+      try {
+        const times = await pollCourse(course as Course, dateStr);
+        const newTimes = await diffAndDetectNew(course.id, dateStr, times);
+
+        let notifications: { alertId: string; matched: number }[] = [];
+        if (newTimes.length > 0) {
+          notifications = await matchAndNotify(
+            course.id,
+            course.name,
+            dateStr,
+            newTimes
+          );
+        }
+
+        allResults.push({
+          course: course.name,
+          date: dateStr,
+          totalTimes: times.length,
+          newTimes: newTimes.length,
+          notifications: notifications.length,
+        });
+      } catch (err) {
+        allResults.push({
+          course: course.name,
+          date: dateStr,
+          error: (err as Error).message,
+        });
       }
-      const dateStr = targetDate.toISOString().split("T")[0];
+    }
+  }
 
-      // Poll the course
-      const times = await pollCourse(course as Course, dateStr);
-
-      // Diff against cache
-      const newTimes = await diffAndDetectNew(course.id, dateStr, times);
-
-      // Match and notify if new times found
-      let notifications: { alertId: string; matched: number }[] = [];
-      if (newTimes.length > 0) {
-        notifications = await matchAndNotify(
-          course.id,
-          course.name,
-          dateStr,
-          newTimes
-        );
-      }
-
-      return {
-        course: course.name,
-        date: dateStr,
-        totalTimes: times.length,
-        newTimes: newTimes.length,
-        notifications: notifications.length,
-      };
-    })
-  );
-
-  return Response.json({
-    polled: courses.length,
-    results: results.map((r) =>
-      r.status === "fulfilled"
-        ? r.value
-        : { error: (r.reason as Error).message }
-    ),
-  });
+  return Response.json({ polled: courses.length, results: allResults });
 }
 
 export const POST = verifySignatureAppRouter(handler);
 
-// Also allow GET for manual testing (no signature verification)
+// Allow GET for manual testing (no QStash signature verification)
 export async function GET() {
   return handler();
 }

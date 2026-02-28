@@ -15,12 +15,17 @@ export async function pollForeUp(
     date: targetDate, // MM-DD-YYYY
     holes: "all",
     players: "0",
-    booking_class: course.platformBookingClass || "",
-    schedule_id: course.platformScheduleId || "",
-    "schedule_ids[]": course.platformScheduleId || "",
     specials_only: "0",
     api_key: "no_limits",
   });
+
+  if (course.platformBookingClass) {
+    params.set("booking_class", course.platformBookingClass);
+  }
+  if (course.platformScheduleId) {
+    params.set("schedule_id", course.platformScheduleId);
+    params.set("schedule_ids[]", course.platformScheduleId);
+  }
 
   const resp = await fetch(`${FOREUP_BASE}?${params}`, {
     headers: { "User-Agent": course.uaOverride || IPHONE_UA },
