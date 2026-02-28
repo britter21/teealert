@@ -178,7 +178,7 @@ export function AlertFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-[var(--color-sand)]/10 bg-[var(--color-surface)] sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto border-[var(--color-sand)]/10 bg-[var(--color-surface)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-[family-name:var(--font-display)] text-xl text-[var(--color-cream)]">
             {isEdit ? "Edit Alert" : "Create Alert"}
