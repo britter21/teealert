@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertFormDialog } from "@/components/alert-form-dialog";
 
@@ -18,6 +18,17 @@ export function CreateAlertButton({
   defaultDate,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [userDefaults, setUserDefaults] = useState<Record<string, unknown> | null>(null);
+
+  // Pre-fetch user alert defaults once on mount so dialog opens instantly
+  useEffect(() => {
+    fetch("/api/user/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.alert_defaults) setUserDefaults(data.alert_defaults);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -47,6 +58,7 @@ export function CreateAlertButton({
         courseName={courseName}
         bookingWindowDays={bookingWindowDays}
         defaultDate={defaultDate}
+        userDefaults={userDefaults}
       />
     </>
   );

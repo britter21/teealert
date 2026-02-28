@@ -38,6 +38,16 @@ interface AlertData {
   recurrence_days: number[] | null;
 }
 
+interface AlertDefaults {
+  earliest_time?: string;
+  latest_time?: string;
+  min_players?: number;
+  max_price?: number | null;
+  lead_days?: string;
+  is_recurring?: boolean;
+  recurrence_days?: number[];
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,6 +55,8 @@ interface Props {
   courseName: string;
   bookingWindowDays?: number | null;
   defaultDate?: string;
+  /** Pre-fetched user defaults so we don't fetch on every dialog open */
+  userDefaults?: AlertDefaults | null;
   /** If provided, form is in edit mode */
   existingAlert?: AlertData;
   onSaved?: () => void;
@@ -57,6 +69,7 @@ export function AlertFormDialog({
   courseName,
   bookingWindowDays,
   defaultDate: defaultDateProp,
+  userDefaults,
   existingAlert,
   onSaved,
 }: Props) {
@@ -80,7 +93,7 @@ export function AlertFormDialog({
     recurrence_days: [] as number[],
   });
 
-  // Load user defaults when creating, or populate from existing alert when editing
+  // Populate form from existing alert (edit) or user defaults (create)
   useEffect(() => {
     if (existingAlert) {
       setForm({
@@ -106,26 +119,33 @@ export function AlertFormDialog({
         recurrence_days: existingAlert.recurrence_days || [],
       });
     } else if (open) {
-      // Fetch user defaults for new alerts
-      fetch("/api/user/profile")
-        .then((r) => r.ok ? r.json() : null)
-        .then((data) => {
-          if (!data?.alert_defaults || Object.keys(data.alert_defaults).length === 0) return;
-          const d = data.alert_defaults;
-          setForm((prev) => ({
-            target_date: defaultDateProp || defaultDate,
-            earliest_time: d.earliest_time || prev.earliest_time,
-            latest_time: d.latest_time || prev.latest_time,
-            min_players: d.min_players ? String(d.min_players) : prev.min_players,
-            max_price: d.max_price != null ? String(d.max_price) : prev.max_price,
-            lead_days: d.lead_days != null ? d.lead_days : (bookingWindowDays ? String(bookingWindowDays) : prev.lead_days),
-            is_recurring: d.is_recurring ?? prev.is_recurring,
-            recurrence_days: d.recurrence_days?.length ? d.recurrence_days : prev.recurrence_days,
-          }));
-        })
-        .catch(() => {});
+      // Apply pre-fetched user defaults instantly (no network call)
+      const d = userDefaults;
+      if (d && Object.keys(d).length > 0) {
+        setForm({
+          target_date: defaultDateProp || defaultDate,
+          earliest_time: d.earliest_time || "06:00",
+          latest_time: d.latest_time || "18:00",
+          min_players: d.min_players ? String(d.min_players) : "4",
+          max_price: d.max_price != null ? String(d.max_price) : "",
+          lead_days: d.lead_days != null ? d.lead_days : (bookingWindowDays ? String(bookingWindowDays) : ""),
+          is_recurring: d.is_recurring ?? false,
+          recurrence_days: d.recurrence_days?.length ? d.recurrence_days : [],
+        });
+      } else {
+        setForm({
+          target_date: defaultDateProp || defaultDate,
+          earliest_time: "06:00",
+          latest_time: "18:00",
+          min_players: "4",
+          max_price: "",
+          lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
+          is_recurring: false,
+          recurrence_days: [],
+        });
+      }
     }
-  }, [existingAlert, defaultDate, defaultDateProp, open, bookingWindowDays]);
+  }, [existingAlert, defaultDate, defaultDateProp, open, bookingWindowDays, userDefaults]);
 
   function update(field: string, value: string | boolean | number[]) {
     setForm((prev) => ({ ...prev, [field]: value }));
