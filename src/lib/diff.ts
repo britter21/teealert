@@ -27,7 +27,7 @@ export async function diffAndDetectNew(
     const pipeline = redis.pipeline();
     pipeline.del(cacheKey);
     pipeline.sadd(cacheKey, ...(currentKeys as [string, ...string[]]));
-    pipeline.expire(cacheKey, 120);
+    pipeline.expire(cacheKey, 600);
     await pipeline.exec();
   }
 
