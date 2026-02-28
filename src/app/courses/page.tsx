@@ -1,12 +1,5 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/server";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface CourseRow {
@@ -20,7 +13,7 @@ interface CourseRow {
   is_active: boolean;
 }
 
-export const revalidate = 60; // ISR: revalidate every 60s
+export const revalidate = 60;
 
 export default async function CoursesPage() {
   const supabase = createServiceClient();
@@ -34,41 +27,57 @@ export default async function CoursesPage() {
     .order("name");
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Courses</h1>
-        <p className="mt-2 text-muted-foreground">
-          Browse golf courses we monitor. Click a course to view live tee time
-          availability.
+    <div className="mx-auto max-w-6xl px-6 py-10 md:py-16">
+      <div className="mb-10">
+        <div className="accent-line mb-6" />
+        <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--color-cream)] sm:text-4xl">
+          Courses
+        </h1>
+        <p className="mt-3 max-w-lg text-[var(--color-sand-muted)]">
+          Browse the courses we monitor. Click any course to view live tee
+          time availability.
         </p>
       </div>
 
       {!courses || courses.length === 0 ? (
-        <p className="text-muted-foreground">No courses available yet.</p>
+        <p className="text-[var(--color-sand-muted)]">
+          No courses available yet.
+        </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(courses as CourseRow[]).map((course) => (
             <Link key={course.id} href={`/courses/${course.id}`}>
-              <Card className="h-full transition-colors hover:bg-muted/50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{course.name}</CardTitle>
-                  <CardDescription>
-                    {[course.location_city, course.location_state]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">{course.platform}</Badge>
-                    {course.booking_window_days && (
-                      <Badge variant="outline">
-                        {course.booking_window_days}-day window
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="course-card group flex h-full flex-col rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6">
+                <div className="mb-4 flex items-start justify-between">
+                  <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)] transition-colors group-hover:text-[var(--color-cream)]">
+                    {course.name}
+                  </h2>
+                  <div className="pulse-available ml-2 mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--color-sage)]" />
+                </div>
+
+                <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
+                  {[course.location_city, course.location_state]
+                    .filter(Boolean)
+                    .join(", ")}
+                </p>
+
+                <div className="mt-auto flex flex-wrap gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
+                  >
+                    {course.platform}
+                  </Badge>
+                  {course.booking_window_days && (
+                    <Badge
+                      variant="outline"
+                      className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
+                    >
+                      {course.booking_window_days}-day window
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </Link>
           ))}
         </div>

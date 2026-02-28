@@ -3,13 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface Alert {
@@ -59,41 +52,72 @@ export default function DashboardPage() {
 
   const activeAlerts = alerts.filter((a) => a.is_active && !a.triggered_at);
   const triggeredAlerts = alerts.filter((a) => a.triggered_at);
-  const inactiveAlerts = alerts.filter((a) => !a.is_active && !a.triggered_at);
+  const inactiveAlerts = alerts.filter(
+    (a) => !a.is_active && !a.triggered_at
+  );
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <p className="text-muted-foreground">Loading alerts...</p>
+      <div className="mx-auto max-w-6xl px-6 py-10">
+        <div className="flex items-center gap-3">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-sand)]/20 border-t-[var(--color-terracotta)]" />
+          <span className="text-[var(--color-sand-muted)]">
+            Loading alerts...
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="mx-auto max-w-6xl px-6 py-10 md:py-16">
+      <div className="mb-10 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="mt-2 text-muted-foreground">
+          <div className="accent-line mb-6" />
+          <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--color-cream)] sm:text-4xl">
+            Dashboard
+          </h1>
+          <p className="mt-3 text-[var(--color-sand-muted)]">
             Manage your tee time alerts.
           </p>
         </div>
-        <Button asChild>
+        <Button
+          asChild
+          className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
+        >
           <Link href="/courses">Create Alert</Link>
         </Button>
       </div>
 
       {alerts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-12">
-            <p className="text-muted-foreground">No alerts yet.</p>
-            <Button asChild>
-              <Link href="/courses">Browse courses to create your first alert</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] px-6 py-16 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-surface-raised)]">
+            <svg
+              className="h-6 w-6 text-[var(--color-sand-muted)]"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+              />
+            </svg>
+          </div>
+          <p className="mb-4 text-[var(--color-sand-muted)]">
+            No alerts yet.
+          </p>
+          <Button
+            asChild
+            className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
+          >
+            <Link href="/courses">Browse courses to create your first alert</Link>
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {activeAlerts.length > 0 && (
             <AlertSection
               title="Active Alerts"
@@ -137,8 +161,12 @@ function AlertSection({
 }) {
   return (
     <div>
-      <h2 className="mb-1 text-lg font-semibold">{title}</h2>
-      <p className="mb-4 text-sm text-muted-foreground">{description}</p>
+      <h2 className="mb-1 font-[family-name:var(--font-display)] text-xl text-[var(--color-sand-bright)]">
+        {title}
+      </h2>
+      <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
+        {description}
+      </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {alerts.map((alert) => (
           <AlertCard key={alert.id} alert={alert} onDelete={onDelete} />
@@ -158,63 +186,76 @@ function AlertCard({
   const course = alert.courses;
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-base">
-              <Link
-                href={`/courses/${alert.course_id}`}
-                className="hover:underline"
-              >
-                {course?.name || "Unknown Course"}
-              </Link>
-            </CardTitle>
-            <CardDescription>
-              {course?.location_city}, {course?.location_state}
-            </CardDescription>
-          </div>
-          {alert.triggered_at ? (
-            <Badge className="bg-green-600 text-white hover:bg-green-600">
-              Triggered
-            </Badge>
-          ) : alert.is_active ? (
-            <Badge>Active</Badge>
-          ) : (
-            <Badge variant="secondary">Inactive</Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <span className="text-muted-foreground">Date: </span>
-            {alert.target_date}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Players: </span>
-            {alert.min_players}+
-          </div>
-          <div>
-            <span className="text-muted-foreground">Time: </span>
-            {alert.earliest_time || "Any"} - {alert.latest_time || "Any"}
-          </div>
-          <div>
-            <span className="text-muted-foreground">Max price: </span>
-            {alert.max_price ? `$${alert.max_price}` : "Any"}
-          </div>
-        </div>
-        <div className="mt-3 flex justify-end">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => onDelete(alert.id)}
+    <div className="course-card flex flex-col rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-5">
+      <div className="mb-3 flex items-start justify-between">
+        <div>
+          <Link
+            href={`/courses/${alert.course_id}`}
+            className="font-[family-name:var(--font-display)] text-base text-[var(--color-sand-bright)] hover:text-[var(--color-cream)]"
           >
-            Delete
-          </Button>
+            {course?.name || "Unknown Course"}
+          </Link>
+          <p className="mt-0.5 text-sm text-[var(--color-sand-muted)]">
+            {[course?.location_city, course?.location_state]
+              .filter(Boolean)
+              .join(", ")}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        {alert.triggered_at ? (
+          <Badge className="border-0 bg-[var(--color-sage)]/15 text-xs text-[var(--color-sage)]">
+            Triggered
+          </Badge>
+        ) : alert.is_active ? (
+          <Badge className="border-0 bg-[var(--color-terracotta)]/15 text-xs text-[var(--color-terracotta)]">
+            Active
+          </Badge>
+        ) : (
+          <Badge
+            variant="secondary"
+            className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
+          >
+            Inactive
+          </Badge>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <div>
+          <span className="text-[var(--color-sand-muted)]">Date: </span>
+          <span className="text-[var(--color-charcoal-text)]">
+            {alert.target_date}
+          </span>
+        </div>
+        <div>
+          <span className="text-[var(--color-sand-muted)]">Players: </span>
+          <span className="text-[var(--color-charcoal-text)]">
+            {alert.min_players}+
+          </span>
+        </div>
+        <div>
+          <span className="text-[var(--color-sand-muted)]">Time: </span>
+          <span className="text-[var(--color-charcoal-text)]">
+            {alert.earliest_time || "Any"} - {alert.latest_time || "Any"}
+          </span>
+        </div>
+        <div>
+          <span className="text-[var(--color-sand-muted)]">Max price: </span>
+          <span className="text-[var(--color-charcoal-text)]">
+            {alert.max_price ? `$${alert.max_price}` : "Any"}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end border-t border-[var(--color-sand)]/5 pt-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-[var(--color-terracotta)]/70 hover:bg-[var(--color-terracotta)]/5 hover:text-[var(--color-terracotta)]"
+          onClick={() => onDelete(alert.id)}
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
   );
 }

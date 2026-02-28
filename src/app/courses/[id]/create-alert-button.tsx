@@ -25,7 +25,6 @@ export function CreateAlertButton({ courseId, courseName }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Default to tomorrow
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const defaultDate = tomorrow.toISOString().split("T")[0];
@@ -84,51 +83,91 @@ export function CreateAlertButton({ courseId, courseName }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create Alert</Button>
+        <Button className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]">
+          <svg
+            className="mr-2 h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+            />
+          </svg>
+          Create Alert
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="border-[var(--color-sand)]/10 bg-[var(--color-surface)] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Alert</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="font-[family-name:var(--font-display)] text-xl text-[var(--color-cream)]">
+            Create Alert
+          </DialogTitle>
+          <DialogDescription className="text-[var(--color-sand-muted)]">
             Get notified when tee times open up at {courseName}.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor="target_date">Date</Label>
+        <form onSubmit={handleSubmit} className="grid gap-5 pt-2">
+          <div className="grid gap-2">
+            <Label
+              htmlFor="target_date"
+              className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+            >
+              Date
+            </Label>
             <Input
               id="target_date"
               type="date"
               value={form.target_date}
               onChange={(e) => update("target_date", e.target.value)}
               required
+              className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="earliest_time">Earliest time</Label>
+            <div className="grid gap-2">
+              <Label
+                htmlFor="earliest_time"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Earliest time
+              </Label>
               <Input
                 id="earliest_time"
                 type="time"
                 value={form.earliest_time}
                 onChange={(e) => update("earliest_time", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="latest_time">Latest time</Label>
+            <div className="grid gap-2">
+              <Label
+                htmlFor="latest_time"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Latest time
+              </Label>
               <Input
                 id="latest_time"
                 type="time"
                 value={form.latest_time}
                 onChange={(e) => update("latest_time", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-1.5">
-              <Label htmlFor="min_players">Min players</Label>
+            <div className="grid gap-2">
+              <Label
+                htmlFor="min_players"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Min players
+              </Label>
               <Input
                 id="min_players"
                 type="number"
@@ -136,10 +175,16 @@ export function CreateAlertButton({ courseId, courseName }: Props) {
                 max="4"
                 value={form.min_players}
                 onChange={(e) => update("min_players", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="max_price">Max green fee ($)</Label>
+            <div className="grid gap-2">
+              <Label
+                htmlFor="max_price"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Max green fee ($)
+              </Label>
               <Input
                 id="max_price"
                 type="number"
@@ -147,13 +192,22 @@ export function CreateAlertButton({ courseId, courseName }: Props) {
                 placeholder="Any"
                 value={form.max_price}
                 onChange={(e) => update("max_price", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)] placeholder:text-[var(--color-sand-muted)]/50"
               />
             </div>
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <div className="rounded-lg border border-[var(--color-terracotta)]/20 bg-[var(--color-terracotta)]/5 px-4 py-3">
+              <p className="text-sm text-[var(--color-terracotta)]">{error}</p>
+            </div>
+          )}
 
-          <Button type="submit" disabled={loading}>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)] disabled:opacity-50"
+          >
             {loading ? "Creating..." : "Create Alert"}
           </Button>
         </form>

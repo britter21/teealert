@@ -17,6 +17,7 @@ export function Nav() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,6 +32,14 @@ export function Nav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 10);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -38,36 +47,57 @@ export function Nav() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex h-14 max-w-5xl items-center px-4">
-        <Link href="/" className="mr-6 flex items-center gap-2 font-semibold">
-          <span className="text-lg">TeeAlert</span>
+    <header
+      className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
+        scrolled
+          ? "border-[var(--color-sand)]/10 bg-[var(--color-desert-night)]/95 backdrop-blur-lg"
+          : "border-transparent bg-transparent"
+      }`}
+    >
+      <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
+        <Link
+          href="/"
+          className="mr-8 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--color-sand-bright)]"
+        >
+          TeeAlert
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 text-sm md:flex">
+        <nav className="hidden items-center gap-8 text-sm md:flex">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className={
+              className={`relative py-1 transition-colors duration-200 ${
                 pathname.startsWith(link.href)
-                  ? "font-medium text-foreground"
-                  : "text-muted-foreground transition-colors hover:text-foreground"
-              }
+                  ? "text-[var(--color-sand-bright)]"
+                  : "text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+              }`}
             >
               {link.label}
+              {pathname.startsWith(link.href) && (
+                <span className="absolute -bottom-[1px] left-0 h-[2px] w-full bg-gradient-to-r from-[var(--color-terracotta)] to-[var(--color-sand)]" />
+              )}
             </Link>
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
           {user ? (
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+            >
               Sign out
             </Button>
           ) : (
-            <Button asChild size="sm">
+            <Button
+              asChild
+              size="sm"
+              className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)]"
+            >
               <Link href="/login">Sign in</Link>
             </Button>
           )}
@@ -75,16 +105,20 @@ export function Nav() {
           {/* Mobile nav */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-[var(--color-sand-muted)] md:hidden"
+              >
                 <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
                   fill="none"
-                  className="h-4 w-4"
+                  className="h-[18px] w-[18px]"
                 >
                   <path
-                    d="M2 4h12M2 8h12M2 12h12"
+                    d="M3 5h12M3 9h12M3 13h12"
                     stroke="currentColor"
                     strokeWidth="1.5"
                     strokeLinecap="round"
@@ -92,23 +126,26 @@ export function Nav() {
                 </svg>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64">
-              <nav className="mt-8 flex flex-col gap-4">
+            <SheetContent
+              side="right"
+              className="w-72 border-l border-[var(--color-sand)]/10 bg-[var(--color-surface)]"
+            >
+              <div className="mt-10 flex flex-col gap-1">
                 {links.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className={
+                    className={`rounded-lg px-4 py-3 text-sm transition-colors ${
                       pathname.startsWith(link.href)
-                        ? "text-sm font-medium text-foreground"
-                        : "text-sm text-muted-foreground"
-                    }
+                        ? "bg-[var(--color-surface-raised)] text-[var(--color-sand-bright)]"
+                        : "text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
+                    }`}
                   >
                     {link.label}
                   </Link>
                 ))}
-              </nav>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
