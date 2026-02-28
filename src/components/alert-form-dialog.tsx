@@ -14,6 +14,16 @@ import {
 } from "@/components/ui/dialog";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const PLAYER_OPTIONS = [1, 2, 3, 4];
+const LEAD_DAY_OPTIONS = [
+  { value: "", label: "Immediately" },
+  { value: "1", label: "1 day" },
+  { value: "3", label: "3 days" },
+  { value: "5", label: "5 days" },
+  { value: "7", label: "7 days" },
+  { value: "14", label: "14 days" },
+  { value: "30", label: "30 days" },
+];
 
 interface AlertData {
   id?: string;
@@ -294,21 +304,25 @@ export function AlertFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label
-                htmlFor="min_players"
-                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
-              >
+              <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
                 Min players
               </Label>
-              <Input
-                id="min_players"
-                type="number"
-                min="1"
-                max="4"
-                value={form.min_players}
-                onChange={(e) => update("min_players", e.target.value)}
-                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
-              />
+              <div className="flex gap-1.5">
+                {PLAYER_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => update("min_players", String(n))}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                      form.min_players === String(n)
+                        ? "bg-[var(--color-terracotta)] text-white"
+                        : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid gap-2">
               <Label
@@ -332,31 +346,30 @@ export function AlertFormDialog({
           {/* Lead time for delayed monitoring */}
           {!form.is_recurring && (
             <div className="grid gap-2">
-              <Label
-                htmlFor="lead_days"
-                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
-              >
-                Start monitoring (days before)
+              <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
+                Start monitoring
               </Label>
-              <Input
-                id="lead_days"
-                type="number"
-                min="0"
-                max="90"
-                placeholder={
-                  bookingWindowDays
-                    ? `${bookingWindowDays} (booking window)`
-                    : "Immediately"
-                }
-                value={form.lead_days}
-                onChange={(e) => update("lead_days", e.target.value)}
-                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)] placeholder:text-[var(--color-sand-muted)]/50"
-              />
-              <p className="text-xs text-[var(--color-sand-muted)]">
-                {form.lead_days
-                  ? `Monitoring starts ${computeStartDate()}`
-                  : "Starts monitoring immediately"}
-              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {LEAD_DAY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => update("lead_days", opt.value)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      form.lead_days === opt.value
+                        ? "bg-[var(--color-terracotta)] text-white"
+                        : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {form.lead_days && (
+                <p className="text-xs text-[var(--color-sand-muted)]">
+                  Monitoring starts {computeStartDate()}
+                </p>
+              )}
             </div>
           )}
 
