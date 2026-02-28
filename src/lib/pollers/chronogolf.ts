@@ -1,35 +1,58 @@
 import type { Course, TeeTime } from "./types";
 
-const CHRONOGOLF_BASE =
-  "https://www.chronogolf.com/marketplace/v2/teetimes";
+const CHRONOGOLF_BASE = "https://www.chronogolf.com/marketplace/clubs";
+
+interface ChronogolfSlot {
+  start_time: string; // "07:09"
+  date: string; // "2026-03-01"
+  course_id: number;
+  out_of_capacity: boolean;
+  frozen: boolean;
+  green_fees: { green_fee: number; affiliation_type_id: number }[];
+}
 
 export async function pollChronogolf(
   course: Course,
   targetDate: string
 ): Promise<TeeTime[]> {
+  const clubId = course.platform_course_id; // club_id stored here
+
   const params = new URLSearchParams({
-    start_date: targetDate, // YYYY-MM-DD
-    course_ids: course.platform_course_id,
-    holes: "9,18",
-    page: "1",
+    date: targetDate, // YYYY-MM-DD
+    holes: "18",
   });
 
-  const resp = await fetch(`${CHRONOGOLF_BASE}?${params}`, {
-    cache: "no-store",
-  });
+  if (course.platform_booking_class) {
+    params.set("affiliation_type_ids", course.platform_booking_class);
+  }
+
+  const resp = await fetch(
+    `${CHRONOGOLF_BASE}/${clubId}/teetimes?${params}`,
+    { cache: "no-store" }
+  );
 
   if (!resp.ok) {
     throw new Error(`Chronogolf ${resp.status}: ${await resp.text()}`);
   }
 
-  const data = await resp.json();
-  const teetimes = data.teetimes || [];
+  const slots: ChronogolfSlot[] = await resp.json();
 
-  return teetimes.map((slot: Record<string, unknown>) => ({
-    time: String(slot.start_time || "").slice(11, 16), // ISO → "08:30"
-    holes: Number(slot.holes) || 18,
-    availableSpots: Number(slot.available_spots) || 0,
-    greenFee: Number(slot.green_fee) || 0,
-    raw: slot,
-  }));
+  // Filter by specific course_id if platform_schedule_id is set
+  const courseIdFilter = course.platform_schedule_id
+    ? Number(course.platform_schedule_id)
+    : null;
+
+  return slots
+    .filter((slot) => {
+      if (courseIdFilter && slot.course_id !== courseIdFilter) return false;
+      if (slot.frozen) return false;
+      return true;
+    })
+    .map((slot) => ({
+      time: slot.start_time, // Already "HH:MM" format
+      holes: 18,
+      availableSpots: slot.out_of_capacity ? 0 : 4,
+      greenFee: slot.green_fees?.[0]?.green_fee ?? 0,
+      raw: slot as unknown as Record<string, unknown>,
+    }));
 }
