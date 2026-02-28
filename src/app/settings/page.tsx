@@ -15,11 +15,8 @@ interface Profile {
 }
 
 const tierColors: Record<string, string> = {
-  free: "bg-[var(--color-sand)]/10 text-[var(--color-sand-muted)]",
   starter: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
   unlimited: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
-  pro: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
-  birdie: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
 };
 
 export default function SettingsPage() {
@@ -91,7 +88,7 @@ export default function SettingsPage() {
           </h1>
           {profile && (
             <Badge
-              className={`border-0 text-xs uppercase tracking-wider ${tierColors[profile.tier] || tierColors.free}`}
+              className={`border-0 text-xs uppercase tracking-wider ${tierColors[profile.tier] || tierColors.starter}`}
             >
               {profile.tier}
             </Badge>
@@ -119,9 +116,9 @@ export default function SettingsPage() {
               <span className="text-[var(--color-sand-muted)]">Plan</span>
               <div className="flex items-center gap-2">
                 <span className="text-[var(--color-charcoal-text)] capitalize">
-                  {profile?.tier || "free"}
+                  {profile?.tier || "starter"}
                 </span>
-                {(profile?.tier === "free" || profile?.tier === "starter") && (
+                {profile?.tier === "starter" && (
                   <Button
                     asChild
                     variant="outline"

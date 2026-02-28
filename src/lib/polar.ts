@@ -30,9 +30,5 @@ export function getTierLimits(tier: string) {
   if (tier in TIERS) {
     return TIERS[tier as TierName];
   }
-  // Legacy tiers map to new ones
-  if (tier === "free") return TIERS.starter;
-  if (tier === "pro") return TIERS.unlimited;
-  if (tier === "birdie") return TIERS.unlimited;
   return TIERS.starter;
 }

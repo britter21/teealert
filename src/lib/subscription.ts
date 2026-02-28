@@ -15,15 +15,14 @@ export async function getUserTier(userId: string): Promise<string> {
 
   if (data?.tier) return data.tier;
 
-  // Check if user is within free trial period
+  // Check profile for tier or trial eligibility
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("created_at, tier")
     .eq("id", userId)
     .single();
 
-  // Legacy hardcoded tier (e.g. birdie for the admin user)
-  if (profile?.tier && profile.tier !== "free") return profile.tier;
+  if (profile?.tier && profile.tier !== "starter") return profile.tier;
 
   // Free trial: all users get unlimited tier for FREE_TRIAL_DAYS
   if (profile?.created_at) {
@@ -59,8 +58,7 @@ export async function getTrialInfo(userId: string): Promise<{
     .eq("id", userId)
     .single();
 
-  // Legacy hardcoded tier
-  if (profile?.tier && profile.tier !== "free") {
+  if (profile?.tier && profile.tier !== "starter") {
     return { isTrial: false, daysRemaining: 0 };
   }
 

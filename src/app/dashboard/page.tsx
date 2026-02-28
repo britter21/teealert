@@ -46,11 +46,8 @@ interface AccountInfo {
 }
 
 const tierColors: Record<string, string> = {
-  free: "bg-[var(--color-sand)]/10 text-[var(--color-sand-muted)]",
   starter: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
   unlimited: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
-  pro: "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]",
-  birdie: "bg-[var(--color-sage)]/15 text-[var(--color-sage)]",
 };
 
 export default function DashboardPage() {
@@ -110,7 +107,7 @@ export default function DashboardPage() {
               Dashboard
             </h1>
             {account && (
-              <Badge className={`border-0 text-xs uppercase tracking-wider ${tierColors[account.tier] || tierColors.free}`}>
+              <Badge className={`border-0 text-xs uppercase tracking-wider ${tierColors[account.tier] || tierColors.starter}`}>
                 {account.tier}
               </Badge>
             )}
@@ -132,7 +129,7 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {(account?.tier === "starter" || account?.tier === "free" || account?.isTrial) && (
+          {(account?.tier === "starter" || account?.isTrial) && (
             <Button
               asChild
               variant="outline"
@@ -142,7 +139,7 @@ export default function DashboardPage() {
               <Link href="/pricing">Upgrade</Link>
             </Button>
           )}
-          {!account?.isTrial && account?.tier !== "starter" && account?.tier !== "free" && (
+          {!account?.isTrial && account?.tier !== "starter" && (
             <Button
               asChild
               variant="outline"

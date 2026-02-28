@@ -3,8 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 function tierFromProductName(name: string): string {
   const lower = name.toLowerCase();
-  if (lower.includes("unlimited") || lower.includes("birdie")) return "unlimited";
-  if (lower.includes("starter") || lower.includes("pro")) return "starter";
+  if (lower.includes("unlimited")) return "unlimited";
   return "starter";
 }
 
