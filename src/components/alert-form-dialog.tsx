@@ -17,12 +17,12 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const PLAYER_OPTIONS = [1, 2, 3, 4];
 const LEAD_DAY_OPTIONS = [
   { value: "", label: "Immediately" },
-  { value: "1", label: "1 day" },
-  { value: "3", label: "3 days" },
-  { value: "5", label: "5 days" },
-  { value: "7", label: "7 days" },
-  { value: "14", label: "14 days" },
-  { value: "30", label: "30 days" },
+  { value: "1", label: "1 day before" },
+  { value: "3", label: "3 days before" },
+  { value: "5", label: "5 days before" },
+  { value: "7", label: "1 week before" },
+  { value: "14", label: "2 weeks before" },
+  { value: "30", label: "30 days before" },
 ];
 
 interface AlertData {
