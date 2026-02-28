@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AlertFormDialog } from "@/components/alert-form-dialog";
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 interface Alert {
   id: string;
@@ -17,6 +20,9 @@ interface Alert {
   is_active: boolean;
   triggered_at: string | null;
   created_at: string;
+  start_monitoring_date: string | null;
+  is_recurring: boolean;
+  recurrence_days: number[] | null;
   courses: {
     name: string;
     platform: string;
@@ -43,6 +49,7 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingAlert, setEditingAlert] = useState<Alert | null>(null);
 
   const fetchAlerts = useCallback(async () => {
     try {
@@ -180,6 +187,7 @@ export default function DashboardPage() {
               description="Monitoring for new tee times"
               alerts={activeAlerts}
               onDelete={handleDelete}
+              onEdit={setEditingAlert}
             />
           )}
           {triggeredAlerts.length > 0 && (
@@ -188,6 +196,7 @@ export default function DashboardPage() {
               description="Alerts that found matching tee times"
               alerts={triggeredAlerts}
               onDelete={handleDelete}
+              onEdit={setEditingAlert}
             />
           )}
           {inactiveAlerts.length > 0 && (
@@ -196,9 +205,27 @@ export default function DashboardPage() {
               description="Paused or expired alerts"
               alerts={inactiveAlerts}
               onDelete={handleDelete}
+              onEdit={setEditingAlert}
             />
           )}
         </div>
+      )}
+
+      {/* Edit dialog */}
+      {editingAlert && (
+        <AlertFormDialog
+          open={!!editingAlert}
+          onOpenChange={(open) => {
+            if (!open) setEditingAlert(null);
+          }}
+          courseId={editingAlert.course_id}
+          courseName={editingAlert.courses?.name || "Course"}
+          existingAlert={editingAlert}
+          onSaved={() => {
+            setEditingAlert(null);
+            fetchAlerts();
+          }}
+        />
       )}
     </div>
   );
@@ -209,11 +236,13 @@ function AlertSection({
   description,
   alerts,
   onDelete,
+  onEdit,
 }: {
   title: string;
   description: string;
   alerts: Alert[];
   onDelete: (id: string) => void;
+  onEdit: (alert: Alert) => void;
 }) {
   return (
     <div>
@@ -225,21 +254,61 @@ function AlertSection({
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {alerts.map((alert) => (
-          <AlertCard key={alert.id} alert={alert} onDelete={onDelete} />
+          <AlertCard
+            key={alert.id}
+            alert={alert}
+            onDelete={onDelete}
+            onEdit={onEdit}
+          />
         ))}
       </div>
     </div>
   );
 }
 
+function formatRecurrence(days: number[] | null): string | null {
+  if (!days || days.length === 0) return null;
+  if (days.length === 7) return "Every day";
+  if (
+    days.length === 5 &&
+    [1, 2, 3, 4, 5].every((d) => days.includes(d))
+  )
+    return "Weekdays";
+  if (
+    days.length === 2 &&
+    days.includes(0) &&
+    days.includes(6)
+  )
+    return "Weekends";
+  return days.map((d) => DAY_LABELS[d]).join(", ");
+}
+
+function monitoringStatus(alert: Alert): string | null {
+  if (!alert.start_monitoring_date || !alert.target_date) return null;
+  const today = new Date().toISOString().split("T")[0];
+  if (alert.start_monitoring_date > today) {
+    const start = new Date(alert.start_monitoring_date);
+    const now = new Date(today);
+    const daysUntil = Math.ceil(
+      (start.getTime() - now.getTime()) / 86400000
+    );
+    return `Starts in ${daysUntil}d`;
+  }
+  return null;
+}
+
 function AlertCard({
   alert,
   onDelete,
+  onEdit,
 }: {
   alert: Alert;
   onDelete: (id: string) => void;
+  onEdit: (alert: Alert) => void;
 }) {
   const course = alert.courses;
+  const recurrence = formatRecurrence(alert.recurrence_days);
+  const monitoring = monitoringStatus(alert);
 
   return (
     <div className="course-card flex flex-col rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-5">
@@ -257,22 +326,37 @@ function AlertCard({
               .join(", ")}
           </p>
         </div>
-        {alert.triggered_at ? (
-          <Badge className="border-0 bg-[var(--color-sage)]/15 text-xs text-[var(--color-sage)]">
-            Triggered
-          </Badge>
-        ) : alert.is_active ? (
-          <Badge className="border-0 bg-[var(--color-terracotta)]/15 text-xs text-[var(--color-terracotta)]">
-            Active
-          </Badge>
-        ) : (
-          <Badge
-            variant="secondary"
-            className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
-          >
-            Inactive
-          </Badge>
-        )}
+        <div className="flex items-center gap-1.5">
+          {alert.is_recurring && (
+            <Badge
+              variant="outline"
+              className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
+            >
+              {recurrence}
+            </Badge>
+          )}
+          {monitoring && (
+            <Badge className="border-0 bg-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]">
+              {monitoring}
+            </Badge>
+          )}
+          {alert.triggered_at ? (
+            <Badge className="border-0 bg-[var(--color-sage)]/15 text-xs text-[var(--color-sage)]">
+              Triggered
+            </Badge>
+          ) : alert.is_active ? (
+            <Badge className="border-0 bg-[var(--color-terracotta)]/15 text-xs text-[var(--color-terracotta)]">
+              Active
+            </Badge>
+          ) : (
+            <Badge
+              variant="secondary"
+              className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
+            >
+              Inactive
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -302,7 +386,15 @@ function AlertCard({
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end border-t border-[var(--color-sand)]/5 pt-3">
+      <div className="mt-4 flex justify-end gap-1 border-t border-[var(--color-sand)]/5 pt-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
+          onClick={() => onEdit(alert)}
+        >
+          Edit
+        </Button>
         <Button
           variant="ghost"
           size="sm"

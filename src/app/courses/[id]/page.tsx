@@ -61,7 +61,7 @@ export default async function CourseDetailPage({ params }: Props) {
               </Badge>
             </div>
           </div>
-          <CreateAlertButton courseId={course.id} courseName={course.name} />
+          <CreateAlertButton courseId={course.id} courseName={course.name} bookingWindowDays={course.booking_window_days} />
         </div>
       </div>
 

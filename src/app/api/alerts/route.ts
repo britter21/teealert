@@ -83,6 +83,9 @@ export async function POST(request: NextRequest) {
       holes: body.holes || null,
       notify_sms: body.notify_sms ?? false,
       notify_email: body.notify_email ?? true,
+      start_monitoring_date: body.start_monitoring_date || body.target_date,
+      is_recurring: body.is_recurring ?? false,
+      recurrence_days: body.recurrence_days || null,
     })
     .select()
     .single();

@@ -2,6 +2,20 @@ import { createServiceClient } from "./supabase/server";
 import { sendIMessage } from "./notifications/imessage";
 import type { TeeTime } from "./pollers/types";
 
+function getNextOccurrence(days: number[]): string | null {
+  if (days.length === 0) return null;
+  const now = new Date();
+  // Start from tomorrow and find the next matching day of week
+  for (let i = 1; i <= 7; i++) {
+    const candidate = new Date(now);
+    candidate.setDate(candidate.getDate() + i);
+    if (days.includes(candidate.getDay())) {
+      return candidate.toISOString().split("T")[0];
+    }
+  }
+  return null;
+}
+
 interface Alert {
   id: string;
   course_id: string;
@@ -13,6 +27,8 @@ interface Alert {
   holes: number[] | null;
   notify_sms: boolean;
   notify_email: boolean;
+  is_recurring: boolean;
+  recurrence_days: number[] | null;
   users: { phone: string | null; email: string | null };
 }
 
@@ -34,13 +50,16 @@ export async function matchAndNotify(
 ) {
   const supabase = createServiceClient();
 
+  const today = new Date().toISOString().split("T")[0];
+
   const { data: alerts } = await supabase
     .from("alerts")
     .select("*, users:user_id(phone, email)")
     .eq("course_id", courseId)
     .eq("target_date", targetDate)
     .eq("is_active", true)
-    .is("triggered_at", null);
+    .is("triggered_at", null)
+    .lte("start_monitoring_date", today);
 
   if (!alerts || alerts.length === 0) return [];
 
@@ -62,6 +81,24 @@ export async function matchAndNotify(
       .from("alerts")
       .update({ triggered_at: new Date().toISOString() })
       .eq("id", alert.id);
+
+    // Advance recurring alerts to next occurrence
+    if (alert.is_recurring) {
+      const days = alert.recurrence_days;
+      if (days && days.length > 0) {
+        const nextDate = getNextOccurrence(days);
+        if (nextDate) {
+          await supabase
+            .from("alerts")
+            .update({
+              target_date: nextDate,
+              triggered_at: null,
+              is_active: true,
+            })
+            .eq("id", alert.id);
+        }
+      }
+    }
 
     // Log notification
     for (const result of settled) {

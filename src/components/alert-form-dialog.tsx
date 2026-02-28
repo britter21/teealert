@@ -1,0 +1,386 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+interface AlertData {
+  id?: string;
+  course_id?: string;
+  target_date: string;
+  earliest_time: string | null;
+  latest_time: string | null;
+  min_players: number;
+  max_price: number | null;
+  start_monitoring_date: string | null;
+  is_recurring: boolean;
+  recurrence_days: number[] | null;
+}
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  courseId: string;
+  courseName: string;
+  bookingWindowDays?: number | null;
+  /** If provided, form is in edit mode */
+  existingAlert?: AlertData;
+  onSaved?: () => void;
+}
+
+export function AlertFormDialog({
+  open,
+  onOpenChange,
+  courseId,
+  courseName,
+  bookingWindowDays,
+  existingAlert,
+  onSaved,
+}: Props) {
+  const router = useRouter();
+  const isEdit = !!existingAlert?.id;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const defaultDate = tomorrow.toISOString().split("T")[0];
+
+  const [form, setForm] = useState({
+    target_date: defaultDate,
+    earliest_time: "06:00",
+    latest_time: "18:00",
+    min_players: "1",
+    max_price: "",
+    lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
+    is_recurring: false,
+    recurrence_days: [] as number[],
+  });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (existingAlert) {
+      setForm({
+        target_date: existingAlert.target_date || defaultDate,
+        earliest_time: existingAlert.earliest_time || "06:00",
+        latest_time: existingAlert.latest_time || "18:00",
+        min_players: String(existingAlert.min_players || 1),
+        max_price: existingAlert.max_price ? String(existingAlert.max_price) : "",
+        lead_days:
+          existingAlert.start_monitoring_date && existingAlert.target_date
+            ? String(
+                Math.max(
+                  0,
+                  Math.round(
+                    (new Date(existingAlert.target_date).getTime() -
+                      new Date(existingAlert.start_monitoring_date).getTime()) /
+                      86400000
+                  )
+                )
+              )
+            : "",
+        is_recurring: existingAlert.is_recurring || false,
+        recurrence_days: existingAlert.recurrence_days || [],
+      });
+    }
+  }, [existingAlert, defaultDate]);
+
+  function update(field: string, value: string | boolean | number[]) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function toggleDay(day: number) {
+    setForm((prev) => {
+      const days = prev.recurrence_days.includes(day)
+        ? prev.recurrence_days.filter((d) => d !== day)
+        : [...prev.recurrence_days, day].sort();
+      return { ...prev, recurrence_days: days };
+    });
+  }
+
+  function computeStartDate(): string | null {
+    if (!form.lead_days) return form.target_date;
+    const target = new Date(form.target_date);
+    target.setDate(target.getDate() - Number(form.lead_days));
+    return target.toISOString().split("T")[0];
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const payload = {
+        course_id: courseId,
+        target_date: form.target_date,
+        earliest_time: form.earliest_time || null,
+        latest_time: form.latest_time || null,
+        min_players: Number(form.min_players) || 1,
+        max_price: form.max_price ? Number(form.max_price) : null,
+        start_monitoring_date: computeStartDate(),
+        is_recurring: form.is_recurring,
+        recurrence_days:
+          form.is_recurring && form.recurrence_days.length > 0
+            ? form.recurrence_days
+            : null,
+        holes: [9, 18],
+        notify_sms: true,
+        notify_email: false,
+      };
+
+      let res: Response;
+      if (isEdit) {
+        res = await fetch(`/api/alerts/${existingAlert!.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await fetch("/api/alerts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (res.status === 401) {
+        router.push("/login?redirect=/courses/" + courseId);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save alert");
+
+      onOpenChange(false);
+      if (onSaved) {
+        onSaved();
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="border-[var(--color-sand)]/10 bg-[var(--color-surface)] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-[family-name:var(--font-display)] text-xl text-[var(--color-cream)]">
+            {isEdit ? "Edit Alert" : "Create Alert"}
+          </DialogTitle>
+          <DialogDescription className="text-[var(--color-sand-muted)]">
+            {isEdit
+              ? `Update alert for ${courseName}.`
+              : `Get notified when tee times open up at ${courseName}.`}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="grid gap-5 pt-2">
+          {/* Recurring toggle */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.is_recurring}
+              onClick={() => update("is_recurring", !form.is_recurring)}
+              className={`relative h-5 w-9 rounded-full transition-colors ${
+                form.is_recurring
+                  ? "bg-[var(--color-terracotta)]"
+                  : "bg-[var(--color-sand)]/20"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                  form.is_recurring ? "translate-x-4" : ""
+                }`}
+              />
+            </button>
+            <Label className="text-sm text-[var(--color-sand)]">
+              Recurring alert
+            </Label>
+          </div>
+
+          {/* Day picker for recurring */}
+          {form.is_recurring && (
+            <div className="grid gap-2">
+              <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
+                Repeat on
+              </Label>
+              <div className="flex gap-1.5">
+                {DAY_LABELS.map((label, i) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleDay(i)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
+                      form.recurrence_days.includes(i)
+                        ? "bg-[var(--color-terracotta)] text-white"
+                        : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Date — shown for one-time alerts, hidden for recurring (auto-computed) */}
+          {!form.is_recurring && (
+            <div className="grid gap-2">
+              <Label
+                htmlFor="target_date"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Date
+              </Label>
+              <Input
+                id="target_date"
+                type="date"
+                value={form.target_date}
+                onChange={(e) => update("target_date", e.target.value)}
+                required
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label
+                htmlFor="earliest_time"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Earliest time
+              </Label>
+              <Input
+                id="earliest_time"
+                type="time"
+                value={form.earliest_time}
+                onChange={(e) => update("earliest_time", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label
+                htmlFor="latest_time"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Latest time
+              </Label>
+              <Input
+                id="latest_time"
+                type="time"
+                value={form.latest_time}
+                onChange={(e) => update("latest_time", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label
+                htmlFor="min_players"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Min players
+              </Label>
+              <Input
+                id="min_players"
+                type="number"
+                min="1"
+                max="4"
+                value={form.min_players}
+                onChange={(e) => update("min_players", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label
+                htmlFor="max_price"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Max green fee ($)
+              </Label>
+              <Input
+                id="max_price"
+                type="number"
+                min="0"
+                placeholder="Any"
+                value={form.max_price}
+                onChange={(e) => update("max_price", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)] placeholder:text-[var(--color-sand-muted)]/50"
+              />
+            </div>
+          </div>
+
+          {/* Lead time for delayed monitoring */}
+          {!form.is_recurring && (
+            <div className="grid gap-2">
+              <Label
+                htmlFor="lead_days"
+                className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+              >
+                Start monitoring (days before)
+              </Label>
+              <Input
+                id="lead_days"
+                type="number"
+                min="0"
+                max="90"
+                placeholder={
+                  bookingWindowDays
+                    ? `${bookingWindowDays} (booking window)`
+                    : "Immediately"
+                }
+                value={form.lead_days}
+                onChange={(e) => update("lead_days", e.target.value)}
+                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)] placeholder:text-[var(--color-sand-muted)]/50"
+              />
+              <p className="text-xs text-[var(--color-sand-muted)]">
+                {form.lead_days
+                  ? `Monitoring starts ${computeStartDate()}`
+                  : "Starts monitoring immediately"}
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg border border-[var(--color-terracotta)]/20 bg-[var(--color-terracotta)]/5 px-4 py-3">
+              <p className="text-sm text-[var(--color-terracotta)]">{error}</p>
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)] disabled:opacity-50"
+          >
+            {loading
+              ? isEdit
+                ? "Saving..."
+                : "Creating..."
+              : isEdit
+                ? "Save Changes"
+                : "Create Alert"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

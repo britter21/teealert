@@ -42,8 +42,49 @@ function getTargetDates(bookingWindowDays: number | null): string[] {
   return [...new Set(dates)]; // dedupe
 }
 
+function getNextOccurrence(days: number[]): string | null {
+  if (!days || days.length === 0) return null;
+  const now = new Date();
+  for (let i = 1; i <= 7; i++) {
+    const candidate = new Date(now);
+    candidate.setDate(candidate.getDate() + i);
+    if (days.includes(candidate.getDay())) {
+      return candidate.toISOString().split("T")[0];
+    }
+  }
+  return null;
+}
+
+async function advanceRecurringAlerts() {
+  const supabase = createServiceClient();
+  const today = new Date().toISOString().split("T")[0];
+
+  // Find recurring alerts whose target_date is in the past
+  const { data: staleAlerts } = await supabase
+    .from("alerts")
+    .select("id, recurrence_days")
+    .eq("is_recurring", true)
+    .eq("is_active", true)
+    .lt("target_date", today);
+
+  if (!staleAlerts || staleAlerts.length === 0) return;
+
+  for (const alert of staleAlerts) {
+    const nextDate = getNextOccurrence(alert.recurrence_days);
+    if (nextDate) {
+      await supabase
+        .from("alerts")
+        .update({ target_date: nextDate, triggered_at: null })
+        .eq("id", alert.id);
+    }
+  }
+}
+
 async function handler() {
   const supabase = createServiceClient();
+
+  // Advance any recurring alerts whose date has passed
+  await advanceRecurringAlerts();
 
   const { data: courses, error } = await supabase
     .from("courses")
