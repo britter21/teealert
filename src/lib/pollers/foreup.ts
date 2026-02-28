@@ -42,11 +42,11 @@ export async function pollForeUp(
   if (!Array.isArray(data)) return [];
 
   return data.map((slot: Record<string, unknown>) => ({
-    time: String(slot.time || "").slice(0, 5), // "08:30:00" → "08:30"
+    time: String(slot.time || "").split(" ").pop()?.slice(0, 5) || "", // "2026-03-01 07:10" → "07:10"
     holes: Number(slot.holes) || 18,
     availableSpots: Number(slot.available_spots) || 0,
     greenFee: Number(slot.green_fee) || 0,
     cartFee: Number(slot.cart_fee) || 0,
-    raw: slot,
+    raw: { ...slot, date: String(slot.time || "").split(" ")[0] },
   }));
 }
