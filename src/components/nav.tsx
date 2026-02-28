@@ -8,9 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import type { User } from "@supabase/supabase-js";
 
-const links = [
+const publicLinks = [
   { href: "/courses", label: "Courses" },
+  { href: "/pricing", label: "Pricing" },
+];
+
+const authLinks = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export function Nav() {
@@ -64,7 +69,7 @@ export function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 text-sm md:flex">
-          {links.map((link) => (
+          {[...publicLinks, ...(user ? authLinks : [])].map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -131,7 +136,7 @@ export function Nav() {
               className="w-72 border-l border-[var(--color-sand)]/10 bg-[var(--color-surface)]"
             >
               <div className="mt-10 flex flex-col gap-1">
-                {links.map((link) => (
+                {[...publicLinks, ...(user ? authLinks : [])].map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

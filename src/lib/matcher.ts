@@ -30,7 +30,8 @@ interface Alert {
   notify_email: boolean;
   is_recurring: boolean;
   recurrence_days: number[] | null;
-  users: { phone: string | null; email: string | null };
+  users: { email: string | null };
+  user_profiles: { phone: string | null } | null;
 }
 
 function matchesAlert(t: TeeTime, alert: Alert): boolean {
@@ -57,7 +58,7 @@ export async function matchAndNotify(
 
   const { data: alerts } = await supabase
     .from("alerts")
-    .select("*, users:user_id(phone, email)")
+    .select("*, users:user_id(email), user_profiles:user_id(phone)")
     .eq("course_id", courseId)
     .eq("target_date", targetDate)
     .eq("is_active", true)
@@ -78,8 +79,9 @@ export async function matchAndNotify(
         : undefined;
 
     const promises = [];
-    if (alert.notify_sms && alert.users?.phone) {
-      promises.push(sendIMessage(alert.users.phone, courseName, matching, bookingLink));
+    const phone = alert.user_profiles?.phone;
+    if (alert.notify_sms && phone) {
+      promises.push(sendIMessage(phone, courseName, matching, bookingLink));
     }
 
     const settled = await Promise.allSettled(promises);
@@ -113,7 +115,7 @@ export async function matchAndNotify(
       await supabase.from("notification_log").insert({
         alert_id: alert.id,
         channel: "imessage",
-        recipient: alert.users?.phone || "",
+        recipient: phone || "",
         payload: { course: courseName, times: matching },
         status: result.status === "fulfilled" ? "sent" : "failed",
       });
