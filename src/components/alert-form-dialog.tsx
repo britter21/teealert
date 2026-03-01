@@ -102,19 +102,21 @@ export function AlertFormDialog({
         latest_time: (existingAlert.latest_time || "18:00").slice(0, 5),
         min_players: String(existingAlert.min_players || 1),
         max_price: existingAlert.max_price ? String(existingAlert.max_price) : "",
-        lead_days:
-          existingAlert.start_monitoring_date && existingAlert.target_date
-            ? String(
-                Math.max(
-                  0,
-                  Math.round(
-                    (new Date(existingAlert.target_date).getTime() -
-                      new Date(existingAlert.start_monitoring_date).getTime()) /
-                      86400000
-                  )
-                )
-              )
-            : "",
+        lead_days: (() => {
+          if (!existingAlert.start_monitoring_date || !existingAlert.target_date) return "";
+          const today = new Date().toISOString().split("T")[0];
+          // If monitoring already started (start_monitoring_date <= today), show "Immediately"
+          if (existingAlert.start_monitoring_date <= today) return "";
+          const diff = Math.max(
+            0,
+            Math.round(
+              (new Date(existingAlert.target_date).getTime() -
+                new Date(existingAlert.start_monitoring_date).getTime()) /
+                86400000
+            )
+          );
+          return String(diff);
+        })(),
         is_recurring: existingAlert.is_recurring || false,
         recurrence_days: existingAlert.recurrence_days || [],
       });
@@ -160,8 +162,11 @@ export function AlertFormDialog({
     });
   }
 
-  function computeStartDate(): string | null {
-    if (!form.lead_days) return form.target_date;
+  function computeStartDate(): string {
+    if (!form.lead_days) {
+      // "Immediately" — start monitoring today
+      return new Date().toISOString().split("T")[0];
+    }
     const target = new Date(form.target_date);
     target.setDate(target.getDate() - Number(form.lead_days));
     return target.toISOString().split("T")[0];
