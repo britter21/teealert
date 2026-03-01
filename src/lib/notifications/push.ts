@@ -34,7 +34,7 @@ function buildBody(times: TeeTime[]): string {
     .slice(0, 3)
     .map((t) => {
       const spots = t.availableSpots < 0 ? "open" : `${t.availableSpots} spot${t.availableSpots !== 1 ? "s" : ""}`;
-      return `${formatTime12h(t.time)} · ${spots} · ${t.holes}h · $${t.greenFee}`;
+      return `${formatTime12h(t.time)} · ${spots} · ${t.holes} holes · $${t.greenFee}`;
     })
     .join("\n");
 }

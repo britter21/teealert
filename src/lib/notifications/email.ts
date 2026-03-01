@@ -41,7 +41,7 @@ function buildHtml(
           ${t.availableSpots < 0 ? "Open" : `${t.availableSpots} spot${t.availableSpots !== 1 ? "s" : ""}`}
         </td>
         <td style="padding:8px 12px;font-size:15px;color:#a4b89e;border-bottom:1px solid #1e2b23;">
-          ${t.holes}h
+          ${t.holes} holes
         </td>
         <td style="padding:8px 12px;font-size:15px;color:#a4b89e;border-bottom:1px solid #1e2b23;">
           $${t.greenFee}
@@ -107,7 +107,7 @@ function buildText(
   const lines = ["TEE TIME ALERT", `${courseName}${dateLine}`, `${times.length} tee time${times.length !== 1 ? "s" : ""} found`, ""];
   for (const t of times.slice(0, 5)) {
     const spots = t.availableSpots < 0 ? "open" : `${t.availableSpots} spots`;
-    lines.push(`${formatTime12h(t.time)} - ${spots} | ${t.holes}h | $${t.greenFee}`);
+    lines.push(`${formatTime12h(t.time)} - ${spots} | ${t.holes} holes | $${t.greenFee}`);
   }
   if (times.length > 5) lines.push(`+${times.length - 5} more available`);
   if (bookingUrl) {
