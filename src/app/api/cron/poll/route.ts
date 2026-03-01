@@ -97,65 +97,70 @@ async function checkPollHealthAndAlert(supabase: ReturnType<typeof createService
   });
 }
 
-function getNextOccurrence(days: number[]): string | null {
-  if (!days || days.length === 0) return null;
-  const now = new Date();
-  for (let i = 1; i <= 7; i++) {
-    const candidate = new Date(now);
-    candidate.setDate(candidate.getDate() + i);
-    if (days.includes(candidate.getDay())) {
-      return candidate.toISOString().split("T")[0];
-    }
-  }
-  return null;
-}
+/**
+ * Expand recurring alerts into all matching dates within the next 30 days.
+ * Returns course+date pairs to add to the poll set.
+ */
+async function getRecurringPollPairs(supabase: ReturnType<typeof createServiceClient>) {
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
 
-async function advanceRecurringAlerts() {
-  const supabase = createServiceClient();
-  const today = new Date().toISOString().split("T")[0];
-
-  const { data: staleAlerts } = await supabase
+  const { data: recurringAlerts } = await supabase
     .from("alerts")
-    .select("id, recurrence_days")
+    .select("course_id, recurrence_days")
     .eq("is_recurring", true)
     .eq("is_active", true)
-    .lt("target_date", today);
+    .lte("start_monitoring_date", todayStr);
 
-  if (!staleAlerts || staleAlerts.length === 0) return;
+  if (!recurringAlerts || recurringAlerts.length === 0) return [];
 
-  for (const alert of staleAlerts) {
-    const nextDate = getNextOccurrence(alert.recurrence_days);
-    if (nextDate) {
-      await supabase
-        .from("alerts")
-        .update({ target_date: nextDate })
-        .eq("id", alert.id);
+  const pairs: { courseId: string; date: string }[] = [];
+
+  for (const alert of recurringAlerts) {
+    if (!alert.recurrence_days || alert.recurrence_days.length === 0) continue;
+    // Generate all matching dates from today through 30 days out
+    for (let i = 0; i <= 30; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      if (alert.recurrence_days.includes(d.getDay())) {
+        pairs.push({ courseId: alert.course_id, date: d.toISOString().split("T")[0] });
+      }
     }
   }
+
+  return pairs;
 }
 
 async function handler() {
   const supabase = createServiceClient();
 
-  await advanceRecurringAlerts();
-
   const today = new Date().toISOString().split("T")[0];
 
-  // Get all active, untriggered alerts that have started monitoring
-  // This gives us the exact course+date pairs we need to poll
+  // Get one-time alert course+date pairs
   const { data: activeAlerts } = await supabase
     .from("alerts")
     .select("course_id, target_date")
     .eq("is_active", true)
+    .eq("is_recurring", false)
     .lte("start_monitoring_date", today)
     .gte("target_date", today);
 
-  if (!activeAlerts || activeAlerts.length === 0) {
+  // Get recurring alert course+date pairs (all matching days within 30 days)
+  const recurringPairs = await getRecurringPollPairs(supabase);
+
+  // Merge and deduplicate
+  const pairSet = new Set<string>();
+  for (const a of activeAlerts || []) {
+    pairSet.add(`${a.course_id}|${a.target_date}`);
+  }
+  for (const p of recurringPairs) {
+    pairSet.add(`${p.courseId}|${p.date}`);
+  }
+
+  if (pairSet.size === 0) {
     return Response.json({ polled: 0, message: "No active alerts" });
   }
 
-  // Deduplicate to unique course+date pairs
-  const pairSet = new Set(activeAlerts.map((a) => `${a.course_id}|${a.target_date}`));
   const pairs = [...pairSet].map((p) => {
     const [courseId, date] = p.split("|");
     return { courseId, date };

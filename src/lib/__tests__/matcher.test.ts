@@ -14,7 +14,7 @@ vi.mock("../notifications/push", () => ({
   sendPushNotifications: vi.fn(),
 }));
 
-import { matchesAlert, getNextOccurrence, type Alert } from "../matcher";
+import { matchesAlert, type Alert } from "../matcher";
 import type { TeeTime } from "../pollers/types";
 
 // Helper to build a TeeTime with defaults
@@ -220,46 +220,3 @@ describe("matchesAlert", () => {
   });
 });
 
-describe("getNextOccurrence", () => {
-  it("returns null for empty days array", () => {
-    expect(getNextOccurrence([])).toBeNull();
-  });
-
-  it("returns a date within the next 7 days", () => {
-    const result = getNextOccurrence([0, 1, 2, 3, 4, 5, 6]);
-    expect(result).not.toBeNull();
-
-    const resultDate = new Date(result!);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 8);
-
-    expect(resultDate.getTime()).toBeGreaterThanOrEqual(
-      new Date(tomorrow.toISOString().split("T")[0]).getTime()
-    );
-    expect(resultDate.getTime()).toBeLessThan(
-      new Date(nextWeek.toISOString().split("T")[0]).getTime()
-    );
-  });
-
-  it("returns tomorrow if tomorrow's day is in the list", () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowDay = tomorrow.getDay();
-    const result = getNextOccurrence([tomorrowDay]);
-    expect(result).toBe(tomorrow.toISOString().split("T")[0]);
-  });
-
-  it("never returns today", () => {
-    const today = new Date();
-    const todayDay = today.getDay();
-    const result = getNextOccurrence([todayDay]);
-    expect(result).not.toBe(today.toISOString().split("T")[0]);
-  });
-
-  it("returns YYYY-MM-DD format", () => {
-    const result = getNextOccurrence([6]);
-    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  });
-});

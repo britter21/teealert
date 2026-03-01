@@ -5,20 +5,6 @@ import { sendPushNotifications } from "./notifications/push";
 import { getBookingUrl } from "./booking-url";
 import type { TeeTime } from "./pollers/types";
 
-export function getNextOccurrence(days: number[]): string | null {
-  if (days.length === 0) return null;
-  const now = new Date();
-  // Start from tomorrow and find the next matching day of week
-  for (let i = 1; i <= 7; i++) {
-    const candidate = new Date(now);
-    candidate.setDate(candidate.getDate() + i);
-    if (days.includes(candidate.getDay())) {
-      return candidate.toISOString().split("T")[0];
-    }
-  }
-  return null;
-}
-
 interface NotifyChannels {
   imessage?: boolean;
   email?: boolean;
@@ -68,13 +54,30 @@ export async function matchAndNotify(
 
   const today = new Date().toISOString().split("T")[0];
 
-  const { data: alerts, error: alertError } = await supabase
+  // Match one-time alerts by exact target_date
+  const { data: oneTimeAlerts, error: oneTimeError } = await supabase
     .from("alerts")
     .select("*, user_profiles!alerts_user_profiles_fkey(phone, notify_channels)")
     .eq("course_id", courseId)
     .eq("target_date", targetDate)
     .eq("is_active", true)
+    .eq("is_recurring", false)
     .lte("start_monitoring_date", today);
+
+  // Match recurring alerts by day-of-week
+  const [year, month, day] = targetDate.split("-").map(Number);
+  const dayOfWeek = new Date(year, month - 1, day).getDay();
+  const { data: recurringAlerts, error: recurringError } = await supabase
+    .from("alerts")
+    .select("*, user_profiles!alerts_user_profiles_fkey(phone, notify_channels)")
+    .eq("course_id", courseId)
+    .eq("is_active", true)
+    .eq("is_recurring", true)
+    .contains("recurrence_days", [dayOfWeek])
+    .lte("start_monitoring_date", today);
+
+  const alertError = oneTimeError || recurringError;
+  const alerts = [...(oneTimeAlerts || []), ...(recurringAlerts || [])];
 
   if (alertError) {
     console.error("Alert query error:", alertError.message);
