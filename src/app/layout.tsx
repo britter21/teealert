@@ -55,6 +55,7 @@ export default function RootLayout({
               Tee Time Hawk
             </p>
             <div className="flex items-center gap-4">
+              <Link href="/faq" className="hover:text-[var(--color-sand)]">FAQ</Link>
               <Link href="/support" className="hover:text-[var(--color-sand)]">Support</Link>
               <Link href="/privacy" className="hover:text-[var(--color-sand)]">Privacy</Link>
               <Link href="/terms" className="hover:text-[var(--color-sand)]">Terms</Link>
