@@ -80,7 +80,9 @@ interface SmokeStage {
 
 interface SmokeTestResult {
   overall: string;
-  testPair?: { courseId: string; date: string };
+  mode?: string;
+  course?: string;
+  date?: string;
   totalDuration_ms?: number;
   message?: string;
   stages: SmokeStage[];
@@ -136,11 +138,12 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const runSmokeTest = useCallback(async () => {
+  const runSmokeTest = useCallback(async (live = false) => {
     setSmokeLoading(true);
     setSmokeTest(null);
     try {
-      const res = await fetch("/api/admin/smoke-test");
+      const url = live ? "/api/admin/smoke-test?live=true" : "/api/admin/smoke-test";
+      const res = await fetch(url);
       if (res.ok) {
         setSmokeTest(await res.json());
       } else {
@@ -345,17 +348,29 @@ export default function AdminPage() {
           <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
             Pipeline Smoke Test
           </h2>
-          <Button
-            onClick={runSmokeTest}
-            disabled={smokeLoading}
-            size="sm"
-            className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta)]/80 disabled:opacity-50"
-          >
-            {smokeLoading ? "Running..." : "Run Test"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => runSmokeTest(false)}
+              disabled={smokeLoading}
+              size="sm"
+              variant="outline"
+              className="border-[var(--color-sand)]/10 text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)] disabled:opacity-50"
+            >
+              {smokeLoading ? "Running..." : "Dry Run"}
+            </Button>
+            <Button
+              onClick={() => runSmokeTest(true)}
+              disabled={smokeLoading}
+              size="sm"
+              className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta)]/80 disabled:opacity-50"
+            >
+              {smokeLoading ? "Running..." : "Live Test"}
+            </Button>
+          </div>
         </div>
         <p className="mb-3 text-xs text-[var(--color-sand-muted)]">
-          Exercises the full poll pipeline (query alerts → fetch tee times → Redis diff → alert matching) in dry-run mode. No notifications sent.
+          <strong>Dry Run</strong>: Exercises the full pipeline read-only — no notifications sent.{" "}
+          <strong>Live Test</strong>: Creates a temp alert, sends real notifications (iMessage + email + push) to you, then cleans up.
         </p>
         {smokeLoading && (
           <div className="flex items-center gap-2 py-4">
@@ -384,9 +399,18 @@ export default function AdminPage() {
                   ({smokeTest.totalDuration_ms}ms)
                 </span>
               )}
-              {smokeTest.testPair && (
+              {smokeTest.mode && (
+                <Badge className={`border-0 text-xs ${
+                  smokeTest.mode === "live"
+                    ? "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]"
+                    : "bg-[var(--color-sand)]/15 text-[var(--color-sand-muted)]"
+                }`}>
+                  {smokeTest.mode}
+                </Badge>
+              )}
+              {smokeTest.course && (
                 <span className="text-xs text-[var(--color-sand-muted)]">
-                  — {smokeTest.testPair.courseId.slice(0, 8)}... on {smokeTest.testPair.date}
+                  — {smokeTest.course} on {smokeTest.date}
                 </span>
               )}
             </div>
