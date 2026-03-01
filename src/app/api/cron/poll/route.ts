@@ -39,41 +39,35 @@ async function advanceRecurringAlerts() {
   }
 }
 
-function getTargetDates(bookingWindowDays: number | null): string[] {
-  const dates: string[] = [];
-  const now = new Date();
-
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  dates.push(tomorrow.toISOString().split("T")[0]);
-
-  if (bookingWindowDays && bookingWindowDays > 1) {
-    const edge = new Date(now);
-    edge.setDate(edge.getDate() + bookingWindowDays);
-    dates.push(edge.toISOString().split("T")[0]);
-  }
-
-  return [...new Set(dates)];
-}
-
 async function handler() {
   const supabase = createServiceClient();
 
   await advanceRecurringAlerts();
 
   const today = new Date().toISOString().split("T")[0];
-  const { data: alertedCourseIds } = await supabase
+
+  // Get all active, untriggered alerts that have started monitoring
+  // This gives us the exact course+date pairs we need to poll
+  const { data: activeAlerts } = await supabase
     .from("alerts")
-    .select("course_id")
+    .select("course_id, target_date")
     .eq("is_active", true)
     .is("triggered_at", null)
-    .lte("start_monitoring_date", today);
+    .lte("start_monitoring_date", today)
+    .gte("target_date", today);
 
-  if (!alertedCourseIds || alertedCourseIds.length === 0) {
+  if (!activeAlerts || activeAlerts.length === 0) {
     return Response.json({ polled: 0, message: "No active alerts" });
   }
 
-  const courseIds = [...new Set(alertedCourseIds.map((a) => a.course_id))];
+  // Deduplicate to unique course+date pairs
+  const pairSet = new Set(activeAlerts.map((a) => `${a.course_id}|${a.target_date}`));
+  const pairs = [...pairSet].map((p) => {
+    const [courseId, date] = p.split("|");
+    return { courseId, date };
+  });
+
+  const courseIds = [...new Set(pairs.map((p) => p.courseId))];
 
   const { data: courses, error } = await supabase
     .from("courses")
@@ -89,7 +83,9 @@ async function handler() {
     return Response.json({ polled: 0, message: "No courses to poll" });
   }
 
-  // Fan out: publish one QStash message per course+date
+  const courseMap = new Map(courses.map((c) => [c.id, c]));
+
+  // Fan out: publish one QStash message per course+date pair
   const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
   const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
@@ -97,15 +93,18 @@ async function handler() {
 
   const messages: { courseId: string; courseName: string; date: string }[] = [];
 
-  for (const course of courses) {
-    const dates = getTargetDates(course.booking_window_days);
-    for (const dateStr of dates) {
-      messages.push({
-        courseId: course.id,
-        courseName: course.name,
-        date: dateStr,
-      });
-    }
+  for (const pair of pairs) {
+    const course = courseMap.get(pair.courseId);
+    if (!course) continue;
+    messages.push({
+      courseId: course.id,
+      courseName: course.name,
+      date: pair.date,
+    });
+  }
+
+  if (messages.length === 0) {
+    return Response.json({ polled: 0, message: "No course+date pairs to poll" });
   }
 
   // Batch publish — each message becomes its own function invocation

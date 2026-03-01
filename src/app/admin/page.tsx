@@ -46,6 +46,31 @@ interface TopCourse {
   count: number;
 }
 
+interface QStashSchedule {
+  id: string;
+  cron: string;
+  destination: string;
+  isPaused: boolean;
+  retries: number;
+  lastRun: string | null;
+  nextRun: string | null;
+  lastStates: Record<string, string>;
+}
+
+interface QStashEvent {
+  time: string | null;
+  state: string;
+  url: string;
+  messageId: string;
+}
+
+interface QStashData {
+  schedule: QStashSchedule | null;
+  totalSchedules: number;
+  recentEvents: QStashEvent[];
+  eventSummary: Record<string, number>;
+}
+
 interface Stats {
   overview: Overview;
   platforms: Record<string, number>;
@@ -89,22 +114,27 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 
 export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [qstash, setQstash] = useState<QStashData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/stats");
-      if (res.status === 403) {
+      const [statsRes, qstashRes] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/qstash"),
+      ]);
+      if (statsRes.status === 403) {
         setError("Access denied.");
         return;
       }
-      if (!res.ok) {
+      if (!statsRes.ok) {
         setError("Failed to load stats.");
         return;
       }
-      setStats(await res.json());
+      setStats(await statsRes.json());
+      if (qstashRes.ok) setQstash(await qstashRes.json());
       setLastRefresh(new Date());
     } catch {
       setError("Failed to load stats.");
@@ -170,6 +200,110 @@ export default function AdminPage() {
         <StatCard label="Notifications" value={o.totalNotifications} sub={o.failedNotifications > 0 ? `${o.failedNotifications} failed` : "0 failed"} />
         <StatCard label="Courses" value={o.activeCourses} sub={`${o.totalCourses} total`} />
       </div>
+
+      {/* QStash Polling Health */}
+      {qstash && (
+        <div className="mb-8 rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-5">
+          <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
+            Polling Health (QStash)
+          </h2>
+          {qstash.schedule ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Status</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm">
+                    <span className={`inline-block h-2 w-2 rounded-full ${qstash.schedule.isPaused ? "bg-[var(--color-terracotta)]" : "bg-[var(--color-sage)]"}`} />
+                    <span className={qstash.schedule.isPaused ? "text-[var(--color-terracotta)]" : "text-[var(--color-sage)]"}>
+                      {qstash.schedule.isPaused ? "Paused" : "Active"}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Schedule</p>
+                  <p className="mt-1 text-sm text-[var(--color-charcoal-text)]">{qstash.schedule.cron}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Last Run</p>
+                  <p className="mt-1 text-sm text-[var(--color-charcoal-text)]">
+                    {qstash.schedule.lastRun ? timeAgo(qstash.schedule.lastRun) : "Never"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Next Run</p>
+                  <p className="mt-1 text-sm text-[var(--color-charcoal-text)]">
+                    {qstash.schedule.nextRun ? timeAgo(qstash.schedule.nextRun) : "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Last dispatch result */}
+              {Object.keys(qstash.schedule.lastStates).length > 0 && (
+                <div>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Last Dispatch</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(qstash.schedule.lastStates).map(([msgId, state]) => (
+                      <Badge
+                        key={msgId}
+                        className={`border-0 text-xs ${
+                          state === "SUCCESS"
+                            ? "bg-[var(--color-sage)]/15 text-[var(--color-sage)]"
+                            : "bg-[var(--color-terracotta)]/15 text-[var(--color-terracotta)]"
+                        }`}
+                      >
+                        {state}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent events summary */}
+              {Object.keys(qstash.eventSummary).length > 0 && (
+                <div>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Recent Events (last 20)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(qstash.eventSummary).map(([state, count]) => (
+                      <span key={state} className="text-sm text-[var(--color-charcoal-text)]">
+                        {count} {state.toLowerCase()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent event log */}
+              {qstash.recentEvents.length > 0 && (
+                <div>
+                  <p className="mb-1 text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Event Log</p>
+                  <div className="max-h-40 space-y-1 overflow-y-auto">
+                    {qstash.recentEvents.map((e, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+                          e.state === "DELIVERED" ? "bg-[var(--color-sage)]"
+                          : e.state === "ACTIVE" ? "bg-[var(--color-sand)]"
+                          : "bg-[var(--color-terracotta)]"
+                        }`} />
+                        <span className="w-16 text-[var(--color-sand-muted)]">
+                          {e.time ? timeAgo(e.time) : "—"}
+                        </span>
+                        <span className="text-[var(--color-charcoal-text)]">{e.state}</span>
+                        <span className="truncate text-[var(--color-sand-muted)]">
+                          {e.url?.replace("https://teetimehawk.com", "")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--color-terracotta)]">
+              No polling schedule found. QStash may not be configured.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Platform & Tier breakdown */}
