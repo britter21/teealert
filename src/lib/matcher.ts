@@ -74,7 +74,6 @@ export async function matchAndNotify(
     .eq("course_id", courseId)
     .eq("target_date", targetDate)
     .eq("is_active", true)
-    .is("triggered_at", null)
     .lte("start_monitoring_date", today);
 
   if (alertError) {
@@ -196,13 +195,9 @@ export async function matchAndNotify(
         .eq("id", notificationId);
     }
 
-    // Mark alert as triggered
-    await supabase
-      .from("alerts")
-      .update({ triggered_at: new Date().toISOString() })
-      .eq("id", alert.id);
-
-    // Advance recurring alerts to next occurrence
+    // Recurring alerts: advance to next occurrence after trigger
+    // Non-recurring alerts: keep monitoring — new tee times will come
+    // through via Redis diff, and the alert expires when the date passes
     if (alert.is_recurring) {
       const days = alert.recurrence_days;
       if (days && days.length > 0) {
@@ -212,7 +207,6 @@ export async function matchAndNotify(
             .from("alerts")
             .update({
               target_date: nextDate,
-              triggered_at: null,
               is_active: true,
             })
             .eq("id", alert.id);

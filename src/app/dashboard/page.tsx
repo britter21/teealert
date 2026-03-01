@@ -446,10 +446,6 @@ function AlertCard({
             >
               Expired
             </Badge>
-          ) : alert.triggered_at ? (
-            <Badge className="border-0 bg-[var(--color-sage)]/15 text-xs text-[var(--color-sage)]">
-              Triggered
-            </Badge>
           ) : alert.is_active ? (
             <Badge className="border-0 bg-[var(--color-terracotta)]/15 text-xs text-[var(--color-terracotta)]">
               Active
