@@ -80,7 +80,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-8">
         <div className="mb-6 text-center">
           <h2 className="mb-2 font-[family-name:var(--font-display)] text-xl text-[var(--color-cream)]">
-            Sign in to TeeAlert
+            Sign in to Tee Time Hawk
           </h2>
           <p className="text-sm text-[var(--color-sand-muted)]">
             Enter your email to receive a magic link

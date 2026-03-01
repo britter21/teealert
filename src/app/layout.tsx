@@ -52,7 +52,7 @@ export default function RootLayout({
         <footer className="border-t border-white/5 bg-[var(--color-surface)]">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-10 text-center text-sm text-[var(--color-sand-muted)] sm:flex-row sm:justify-between sm:text-left">
             <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[var(--color-sand)]">
-              TeeAlert
+              Tee Time Hawk
             </p>
             <div className="flex items-center gap-4">
               <Link href="/support" className="hover:text-[var(--color-sand)]">Support</Link>

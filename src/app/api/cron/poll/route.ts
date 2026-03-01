@@ -93,7 +93,7 @@ async function handler() {
   const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
   const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "https://teealert.vercel.app";
+    : "https://teetimehawk.com";
 
   const messages: { courseId: string; courseName: string; date: string }[] = [];
 

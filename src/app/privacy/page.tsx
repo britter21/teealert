@@ -109,10 +109,10 @@ export default function PrivacyPage() {
           <p>
             If you have questions about this privacy policy, please contact us at{" "}
             <a
-              href="mailto:support@teealert.app"
+              href="mailto:support@teetimehawk.com"
               className="text-[var(--color-terracotta)] hover:underline"
             >
-              support@teealert.app
+              support@teetimehawk.com
             </a>
             .
           </p>

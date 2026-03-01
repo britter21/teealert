@@ -70,7 +70,7 @@ export function Nav() {
           href="/"
           className="mr-8 flex items-center gap-2 font-[family-name:var(--font-display)] text-xl tracking-wide text-[var(--color-sand-bright)]"
         >
-          TeeAlert
+          Tee Time Hawk
         </Link>
 
         {/* Desktop nav */}

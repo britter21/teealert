@@ -26,7 +26,7 @@ export default function HomePage() {
           </h1>
 
           <p className="animate-fade-up delay-200 max-w-lg text-lg leading-relaxed text-[var(--color-sand-muted)]">
-            TeeAlert monitors your favorite courses and sends instant
+            Tee Time Hawk monitors your favorite courses and sends instant
             alerts when tee times open up. Set your preferences once and
             we handle the rest.
           </p>

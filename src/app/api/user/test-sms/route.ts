@@ -28,7 +28,7 @@ export async function POST() {
   try {
     await sendPlainIMessage(
       profile.phone,
-      "TeeAlert: Your phone number has been saved. You'll receive tee time alerts here."
+      "Tee Time Hawk: Your phone number has been saved. You'll receive tee time alerts here."
     );
     return Response.json({ ok: true });
   } catch (err) {

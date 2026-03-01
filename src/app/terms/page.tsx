@@ -17,7 +17,7 @@ export default function TermsPage() {
             1. Acceptance of Terms
           </h2>
           <p>
-            By accessing or using TeeAlert (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service.
+            By accessing or using Tee Time Hawk (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service.
           </p>
         </section>
 
@@ -26,7 +26,7 @@ export default function TermsPage() {
             2. Description of Service
           </h2>
           <p>
-            TeeAlert is a tee time notification service. We monitor publicly available tee time information from golf course booking platforms and notify you when tee times matching your preferences become available. TeeAlert does not book tee times on your behalf — you must complete all bookings directly through the course&apos;s booking platform.
+            Tee Time Hawk is a tee time notification service. We monitor publicly available tee time information from golf course booking platforms and notify you when tee times matching your preferences become available. Tee Time Hawk does not book tee times on your behalf — you must complete all bookings directly through the course&apos;s booking platform.
           </p>
         </section>
 
@@ -79,7 +79,7 @@ export default function TermsPage() {
             7. Limitation of Liability
           </h2>
           <p>
-            TeeAlert shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or use, arising from your use of or inability to use the Service. Our total liability for any claim related to the Service shall not exceed the amount you have paid for the Service in the 12 months preceding the claim.
+            Tee Time Hawk shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, or use, arising from your use of or inability to use the Service. Our total liability for any claim related to the Service shall not exceed the amount you have paid for the Service in the 12 months preceding the claim.
           </p>
         </section>
 
@@ -88,7 +88,7 @@ export default function TermsPage() {
             8. Intellectual Property
           </h2>
           <p>
-            The Service, including its design, features, and content, is owned by TeeAlert. You may not copy, modify, distribute, or create derivative works based on the Service without our prior written consent.
+            The Service, including its design, features, and content, is owned by Tee Time Hawk. You may not copy, modify, distribute, or create derivative works based on the Service without our prior written consent.
           </p>
         </section>
 
@@ -117,10 +117,10 @@ export default function TermsPage() {
           <p>
             For questions about these terms, contact us at{" "}
             <a
-              href="mailto:support@teealert.app"
+              href="mailto:support@teetimehawk.com"
               className="text-[var(--color-terracotta)] hover:underline"
             >
-              support@teealert.app
+              support@teetimehawk.com
             </a>
             .
           </p>

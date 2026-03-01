@@ -16,7 +16,7 @@ import {
 const CATEGORIES = [
   { value: "missing_course", label: "Request a Course", description: "Tell us about a course you'd like us to add." },
   { value: "bug", label: "Report a Bug", description: "Something not working right? Let us know." },
-  { value: "feature_request", label: "Feature Request", description: "Have an idea to make TeeAlert better?" },
+  { value: "feature_request", label: "Feature Request", description: "Have an idea to make Tee Time Hawk better?" },
   { value: "billing", label: "Billing Question", description: "Questions about your subscription or charges." },
   { value: "other", label: "Other", description: "Anything else we can help with." },
 ];
