@@ -51,11 +51,11 @@ export default function PrivacyPage() {
           </h2>
           <p className="mb-3">We use the following third-party services:</p>
           <ul className="list-disc space-y-2 pl-5">
-            <li><strong>Supabase</strong> — Authentication and database</li>
-            <li><strong>Vercel</strong> — Application hosting</li>
-            <li><strong>Upstash</strong> — Task scheduling and rate limiting</li>
-            <li><strong>PostHog</strong> — Product analytics (pageviews, feature usage)</li>
-            <li><strong>Resend</strong> — Transactional email delivery</li>
+            <li><strong>Supabase</strong>: Authentication and database</li>
+            <li><strong>Vercel</strong>: Application hosting</li>
+            <li><strong>Upstash</strong>: Task scheduling and rate limiting</li>
+            <li><strong>PostHog</strong>: Product analytics (pageviews, feature usage)</li>
+            <li><strong>Resend</strong>: Transactional email delivery</li>
           </ul>
           <p className="mt-3">
             Each of these services has their own privacy policies governing how they handle data.

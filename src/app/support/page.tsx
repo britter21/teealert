@@ -310,7 +310,7 @@ function SupportPageInner() {
             rows={4}
             placeholder={
               isMissingCourse
-                ? "Any extra details — what platform they use, member vs public access, etc."
+                ? "Any extra details: what platform they use, member vs public access, etc."
                 : "Tell us more..."
             }
             value={message}

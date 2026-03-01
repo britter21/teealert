@@ -103,7 +103,7 @@ function buildText(
   bookingUrl?: string,
   targetDate?: string
 ): string {
-  const dateLine = targetDate ? ` — ${formatDate(targetDate)}` : "";
+  const dateLine = targetDate ? ` - ${formatDate(targetDate)}` : "";
   const lines = ["TEE TIME ALERT", `${courseName}${dateLine}`, `${times.length} tee time${times.length !== 1 ? "s" : ""} found`, ""];
   for (const t of times.slice(0, 5)) {
     const spots = t.availableSpots < 0 ? "open" : `${t.availableSpots} spots`;

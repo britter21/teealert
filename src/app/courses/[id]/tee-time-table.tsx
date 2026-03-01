@@ -311,7 +311,7 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
                       ${t.greenFee}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-[var(--color-sand-muted)]">
-                      {t.cartFee != null ? `$${t.cartFee}` : "—"}
+                      {t.cartFee != null ? `$${t.cartFee}` : "-"}
                     </td>
                   </tr>
                 ))}

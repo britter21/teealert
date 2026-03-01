@@ -26,7 +26,7 @@ export default function TermsPage() {
             2. Description of Service
           </h2>
           <p>
-            Tee Time Hawk is a tee time notification service. We monitor publicly available tee time information from golf course booking platforms and notify you when tee times matching your preferences become available. Tee Time Hawk does not book tee times on your behalf — you must complete all bookings directly through the course&apos;s booking platform.
+            Tee Time Hawk is a tee time notification service. We monitor publicly available tee time information from golf course booking platforms and notify you when tee times matching your preferences become available. Tee Time Hawk does not book tee times on your behalf. You must complete all bookings directly through the course&apos;s booking platform.
           </p>
         </section>
 

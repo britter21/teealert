@@ -78,7 +78,7 @@ async function checkPollHealthAndAlert(supabase: ReturnType<typeof createService
       await resend.emails.send({
         from: "Tee Time Hawk <alerts@teetimehawk.com>",
         to: authUser.user.email,
-        subject: `⚠️ Poll Health Alert — ${(errorRate * 100).toFixed(0)}% error rate`,
+        subject: `⚠️ Poll Health Alert: ${(errorRate * 100).toFixed(0)}% error rate`,
         text: message,
       });
     } catch (err) {

@@ -337,7 +337,7 @@ export default function AdminPage() {
                           : "bg-[var(--color-terracotta)]"
                         }`} />
                         <span className="w-16 text-[var(--color-sand-muted)]">
-                          {e.time ? timeAgo(e.time) : "—"}
+                          {e.time ? timeAgo(e.time) : "-"}
                         </span>
                         <span className="text-[var(--color-charcoal-text)]">{e.state}</span>
                         <span className="truncate text-[var(--color-sand-muted)]">
@@ -477,7 +477,7 @@ export default function AdminPage() {
           </div>
         </div>
         <p className="mb-3 text-xs text-[var(--color-sand-muted)]">
-          <strong>Dry Run</strong>: Exercises the full pipeline read-only — no notifications sent.{" "}
+          <strong>Dry Run</strong>: Exercises the full pipeline read-only, no notifications sent.{" "}
           <strong>Live Test</strong>: Creates a temp alert, sends real notifications (iMessage + email + push) to you, then cleans up.
         </p>
         {smokeLoading && (
@@ -518,7 +518,7 @@ export default function AdminPage() {
               )}
               {smokeTest.course && (
                 <span className="text-xs text-[var(--color-sand-muted)]">
-                  — {smokeTest.course} on {smokeTest.date}
+                  | {smokeTest.course} on {smokeTest.date}
                 </span>
               )}
             </div>

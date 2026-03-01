@@ -15,7 +15,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "What is Tee Time Hawk?",
         answer:
-          "Tee Time Hawk monitors golf course booking systems and sends you instant notifications when tee times matching your preferences become available. Set your course, date, time window, and player count\u2014we handle the rest.",
+          "Tee Time Hawk monitors golf course booking systems and sends you instant notifications when tee times matching your preferences become available. Set your course, date, time window, and player count and we handle the rest.",
       },
       {
         question: "How do I create an alert?",
@@ -30,7 +30,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "Is there a free trial?",
         answer:
-          "Yes! Every new account gets a 14-day free trial with full Unlimited access\u2014no credit card required. After the trial, you can choose the Starter or Unlimited plan.",
+          "Yes! Every new account gets a 14-day free trial with full Unlimited access, no credit card required. After the trial, you can choose the Starter or Unlimited plan.",
       },
     ],
   },
@@ -40,7 +40,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "How quickly will I be notified?",
         answer:
-          "Unlimited plan users get 15-second polling\u2014we check for new tee times every 15 seconds. Starter plan users get 60-second polling. As soon as a matching tee time appears, you'll receive a notification within seconds.",
+          "Unlimited plan users get 15-second polling, meaning we check for new tee times every 15 seconds. Starter plan users get 60-second polling. As soon as a matching tee time appears, you'll receive a notification within seconds.",
       },
       {
         question: "What notification channels are available?",
@@ -50,12 +50,12 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "What is a recurring alert?",
         answer:
-          "A recurring alert monitors every week on the days you choose\u2014like having a separate alert for every upcoming Saturday, but without the hassle of creating one each week. For example, if you always play Saturday mornings, set a recurring alert for Saturdays and we'll automatically watch for tee times every Saturday going forward. Recurring alerts are available on the Unlimited plan.",
+          "A recurring alert monitors every week on the days you choose. It's like having a separate alert for every upcoming Saturday, but without the hassle of creating one each week. For example, if you always play Saturday mornings, set a recurring alert for Saturdays and we'll automatically watch for tee times every Saturday going forward. Recurring alerts are available on the Unlimited plan.",
       },
       {
         question: "What does \"Start monitoring\" mean?",
         answer:
-          "This lets you control when we start checking for tee times. \"Immediately\" means we start looking right away. Other options delay monitoring until closer to your tee time date. For example, if your target date is March 15 and you choose \"1 week,\" we won't start checking until March 8. This is useful if you're a last-minute planner and don't want alerts weeks in advance, or if you'd rather not commit to a booking too far ahead\u2014maybe you're not sure if you can play until closer to the date, or you don't want to get charged for a round you might not make.",
+          "This lets you control when we start checking for tee times. \"Immediately\" means we start looking right away. Other options delay monitoring until closer to your tee time date. For example, if your target date is March 15 and you choose \"1 week,\" we won't start checking until March 8. This is useful if you're a last-minute planner and don't want alerts weeks in advance, or if you'd rather not commit to a booking too far ahead. Maybe you're not sure if you can play until closer to the date, or you don't want to get charged for a round you might not make.",
       },
     ],
   },
@@ -100,7 +100,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "My course shows \"No tee times available.\" Why?",
         answer:
-          "This usually means the course hasn't released tee times for that date yet, or all times are booked. Try a different date. Some courses only release times a few days in advance\u2014that's exactly what alerts are for!",
+          "This usually means the course hasn't released tee times for that date yet, or all times are booked. Try a different date. Some courses only release times a few days in advance, and that's exactly what alerts are for!",
       },
     ],
   },
