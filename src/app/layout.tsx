@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Nav } from "@/components/nav";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PostHogProvider } from "@/components/posthog-provider";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -40,6 +42,8 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${dmSans.variable} antialiased`}
       >
+        <Suspense>
+        <PostHogProvider>
         <TooltipProvider>
         <Nav />
         <main>{children}</main>
@@ -58,6 +62,8 @@ export default function RootLayout({
           </div>
         </footer>
         </TooltipProvider>
+        </PostHogProvider>
+        </Suspense>
       </body>
     </html>
   );

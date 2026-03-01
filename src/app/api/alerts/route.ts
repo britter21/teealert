@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { canCreateAlert, canUseChannel } from "@/lib/subscription";
 import { alertRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { getPostHogServer } from "@/lib/posthog";
 import { NextRequest } from "next/server";
 
 export async function GET() {
@@ -117,6 +118,17 @@ export async function POST(request: NextRequest) {
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
+
+  getPostHogServer()?.capture({
+    distinctId: user.id,
+    event: "alert_created",
+    properties: {
+      course_id: body.course_id,
+      is_recurring: body.is_recurring ?? false,
+      notify_email: body.notify_email ?? true,
+      notify_push: body.notify_push ?? false,
+    },
+  });
 
   return Response.json(data, { status: 201 });
 }

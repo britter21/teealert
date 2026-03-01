@@ -1,5 +1,6 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { createServiceClient } from "@/lib/supabase/server";
+import { getPostHogServer } from "@/lib/posthog";
 
 function tierFromProductName(name: string): string {
   const lower = name.toLowerCase();
@@ -33,6 +34,12 @@ export const POST = Webhooks({
       .from("user_profiles")
       .update({ tier })
       .eq("id", userId);
+
+    getPostHogServer()?.capture({
+      distinctId: userId,
+      event: "subscription_created",
+      properties: { tier },
+    });
   },
 
   onSubscriptionActive: async (payload) => {
@@ -58,10 +65,17 @@ export const POST = Webhooks({
       .from("user_profiles")
       .update({ tier })
       .eq("id", userId);
+
+    getPostHogServer()?.capture({
+      distinctId: userId,
+      event: "subscription_activated",
+      properties: { tier },
+    });
   },
 
   onSubscriptionCanceled: async (payload) => {
     const sub = payload.data;
+    const userId = sub.customer?.externalId;
     const supabase = createServiceClient();
 
     await supabase
@@ -73,6 +87,13 @@ export const POST = Webhooks({
         updated_at: new Date().toISOString(),
       })
       .eq("id", sub.id);
+
+    if (userId) {
+      getPostHogServer()?.capture({
+        distinctId: userId,
+        event: "subscription_canceled",
+      });
+    }
   },
 
   onSubscriptionRevoked: async (payload) => {

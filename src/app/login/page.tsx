@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import posthog from "posthog-js";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +28,10 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message);
+      posthog.capture("login_error", { error: error.message });
     } else {
       setSent(true);
+      posthog.capture("magic_link_requested");
     }
     setLoading(false);
   }

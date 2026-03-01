@@ -54,6 +54,8 @@ export default function PrivacyPage() {
             <li><strong>Supabase</strong> — Authentication and database</li>
             <li><strong>Vercel</strong> — Application hosting</li>
             <li><strong>Upstash</strong> — Task scheduling and rate limiting</li>
+            <li><strong>PostHog</strong> — Product analytics (pageviews, feature usage)</li>
+            <li><strong>Resend</strong> — Transactional email delivery</li>
           </ul>
           <p className="mt-3">
             Each of these services has their own privacy policies governing how they handle data.
@@ -65,7 +67,7 @@ export default function PrivacyPage() {
             5. Cookies
           </h2>
           <p>
-            We use only essential cookies required for authentication and session management. We do not use tracking cookies or third-party analytics.
+            We use essential cookies for authentication and session management. We also use PostHog for product analytics, which may store data in your browser to understand usage patterns. We do not sell this data or use it for advertising.
           </p>
         </section>
 

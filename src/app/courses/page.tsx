@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import posthog from "posthog-js";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,7 @@ export default function CoursesPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       fetchCourses(value, state, 0, false, null);
+      if (value) posthog.capture("courses_searched", { query: value });
     }, 300);
   }
 
@@ -115,6 +117,7 @@ export default function CoursesPage() {
     setUserCoords(null);
     setQuery("");
     fetchCourses("", value, 0, false, null);
+    if (value) posthog.capture("courses_filtered_by_state", { state: value });
   }
 
   function handleNearMe() {
@@ -129,6 +132,7 @@ export default function CoursesPage() {
         setState("");
         setGeoLoading(false);
         fetchCourses("", "", 0, false, coords);
+        posthog.capture("courses_filtered_near_me");
       },
       () => {
         setGeoLoading(false);
