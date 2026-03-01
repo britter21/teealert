@@ -188,7 +188,7 @@ export function AlertFormDialog({
             : null,
         holes: [9, 18],
         notify_sms: true,
-        notify_email: false,
+        notify_email: true,
       };
 
       let res: Response;

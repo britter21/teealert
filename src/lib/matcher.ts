@@ -1,5 +1,6 @@
 import { createServiceClient } from "./supabase/server";
 import { sendIMessage } from "./notifications/imessage";
+import { sendAlertEmail } from "./notifications/email";
 import { getBookingUrl } from "./booking-url";
 import type { TeeTime } from "./pollers/types";
 
@@ -19,6 +20,7 @@ function getNextOccurrence(days: number[]): string | null {
 
 interface Alert {
   id: string;
+  user_id: string;
   course_id: string;
   target_date: string;
   earliest_time: string | null;
@@ -85,13 +87,39 @@ export async function matchAndNotify(
         ? getBookingUrl(platform, platformCourseId, targetDate, bookingSlug, platformScheduleId)
         : undefined;
 
-    const promises = [];
+    const notifications: Array<{
+      promise: Promise<unknown>;
+      channel: string;
+      recipient: string;
+    }> = [];
+
     const phone = alert.user_profiles?.phone;
     if (alert.notify_sms && phone) {
-      promises.push(sendIMessage(phone, courseName, matching, bookingLink));
+      notifications.push({
+        promise: sendIMessage(phone, courseName, matching, bookingLink),
+        channel: "imessage",
+        recipient: phone,
+      });
     }
 
-    const settled = await Promise.allSettled(promises);
+    if (alert.notify_email) {
+      // Fetch user email from auth.users via admin API
+      const { data: userData } = await supabase.auth.admin.getUserById(
+        alert.user_id
+      );
+      const email = userData?.user?.email;
+      if (email) {
+        notifications.push({
+          promise: sendAlertEmail(email, courseName, matching, bookingLink),
+          channel: "email",
+          recipient: email,
+        });
+      }
+    }
+
+    const settled = await Promise.allSettled(
+      notifications.map((n) => n.promise)
+    );
 
     // Mark alert as triggered
     await supabase
@@ -117,12 +145,14 @@ export async function matchAndNotify(
       }
     }
 
-    // Log notification
-    for (const result of settled) {
+    // Log notifications
+    for (let i = 0; i < settled.length; i++) {
+      const result = settled[i];
+      const notif = notifications[i];
       await supabase.from("notification_log").insert({
         alert_id: alert.id,
-        channel: "imessage",
-        recipient: phone || "",
+        channel: notif.channel,
+        recipient: notif.recipient,
         payload: { course: courseName, times: matching },
         status: result.status === "fulfilled" ? "sent" : "failed",
       });
