@@ -60,7 +60,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "What happens after an alert is triggered?",
         answer:
-          "For one-time alerts, we send your notification and mark the alert as triggered. For recurring alerts, we automatically advance to the next matching day and keep monitoring. You can view your full notification history from the dashboard.",
+          "For one-time alerts, we send your notification and keep monitoring\u2014if more tee times open up later, you'll get another alert. The alert stays active until the date passes. For recurring alerts, we send the notification and automatically advance to the next matching day. You can view your full notification history from the dashboard.",
       },
     ],
   },
