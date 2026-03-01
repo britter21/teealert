@@ -145,14 +145,14 @@ export function InstallPrompt() {
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--color-sand-bright)]">
-                Add Tee Time Hawk to your home screen
+                Install Tee Time Hawk for instant alerts
               </p>
-              <p className="mt-1 text-xs text-[var(--color-sand-muted)]">
-                Tap the{" "}
+              <p className="mt-1.5 text-xs text-[var(--color-sand-muted)]">
+                Tap{" "}
                 <svg className="inline h-4 w-4 align-text-bottom text-[var(--color-terracotta)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
                 </svg>
-                {" "}Share button, then &ldquo;Add to Home Screen&rdquo; for instant alerts.
+                {" "}next to the address bar, then <strong className="text-[var(--color-sand)]">Add to Home Screen</strong>.
               </p>
             </div>
           </div>

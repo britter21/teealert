@@ -498,13 +498,31 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-[var(--color-sand)]">
                 Install the app to enable push
               </p>
-              <p className="mt-1.5 text-xs text-[var(--color-sand-muted)]">
-                On iPhone, tap the{" "}
-                <svg className="inline h-4 w-4 align-text-bottom text-[var(--color-terracotta)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
-                </svg>
-                {" "}Share button at the bottom of Safari, then tap &ldquo;Add to Home Screen.&rdquo; Once installed, come back here to enable push notifications.
+              <p className="mt-2 text-xs text-[var(--color-sand-muted)]">
+                Push notifications require installing this app to your home screen. Here&rsquo;s how:
               </p>
+              <ol className="mt-3 space-y-2 text-xs text-[var(--color-sand-muted)]">
+                <li className="flex gap-2">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">1</span>
+                  <span>Tap the <strong className="text-[var(--color-sand)]">
+                    <svg className="inline h-4 w-4 align-text-bottom text-[var(--color-terracotta)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                    </svg>
+                    {" "}three dots</strong> next to the address bar</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">2</span>
+                  <span>Tap <strong className="text-[var(--color-sand)]">Add to Home Screen</strong></span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">3</span>
+                  <span>Tap <strong className="text-[var(--color-sand)]">Add</strong> in the top right</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">4</span>
+                  <span>Open the app from your home screen and come back here to enable push</span>
+                </li>
+              </ol>
             </div>
           )}
         </div>
