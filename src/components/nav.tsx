@@ -29,10 +29,19 @@ export function Nav() {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) {
+        fetch("/api/notifications/unread-count")
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => { if (d) setUnreadCount(d.count); })
+          .catch(() => {});
+      }
+    });
 
     const {
       data: { subscription },
@@ -94,6 +103,21 @@ export function Nav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
+          {user && (
+            <Link
+              href="/notifications"
+              className="relative hidden p-1.5 text-[var(--color-sand-muted)] transition-colors hover:text-[var(--color-sand)] md:block"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-terracotta)] px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
           {user ? (
             <Button
               variant="ghost"
@@ -142,7 +166,7 @@ export function Nav() {
               className="w-72 border-l border-[var(--color-sand)]/10 bg-[var(--color-surface)]"
             >
               <div className="mt-10 flex flex-col gap-1">
-                {[...publicLinks, ...(user ? authLinks : []), ...(user?.id === ADMIN_USER_ID ? adminLinks : [])].map((link) => (
+                {[...publicLinks, ...(user ? [...authLinks, { href: "/notifications", label: "Notifications" }] : []), ...(user?.id === ADMIN_USER_ID ? adminLinks : [])].map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

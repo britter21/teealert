@@ -1,0 +1,24 @@
+import { createClient } from "@/lib/supabase/server";
+
+export async function PATCH() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error } = await supabase
+    .from("alert_notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  if (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+
+  return Response.json({ ok: true });
+}

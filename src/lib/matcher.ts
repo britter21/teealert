@@ -89,6 +89,46 @@ export async function matchAndNotify(
         ? getBookingUrl(platform, platformCourseId, targetDate, bookingSlug, platformScheduleId)
         : undefined;
 
+    // Query course for location info
+    const { data: courseData } = await supabase
+      .from("courses")
+      .select("location_city, location_state")
+      .eq("id", courseId)
+      .single();
+
+    // Insert alert_notification record
+    let notificationId: string | null = null;
+    const matchedTimesJson = matching.map((t) => ({
+      time: t.time,
+      holes: t.holes,
+      availableSpots: t.availableSpots,
+      greenFee: t.greenFee,
+    }));
+
+    const { data: notifRow } = await supabase
+      .from("alert_notifications")
+      .insert({
+        user_id: alert.user_id,
+        alert_id: alert.id,
+        course_id: courseId,
+        target_date: targetDate,
+        matched_times: matchedTimesJson,
+        booking_url: bookingLink || null,
+        course_name: courseName,
+        location_city: courseData?.location_city || null,
+        location_state: courseData?.location_state || null,
+        channels_sent: [],
+      })
+      .select("id")
+      .single();
+
+    notificationId = notifRow?.id ?? null;
+
+    // Build in-app URL for push notifications
+    const pushUrl = notificationId
+      ? `https://teetimehawk.com/notifications/${notificationId}`
+      : bookingLink;
+
     const notifications: Array<{
       promise: Promise<unknown>;
       channel: string;
@@ -105,7 +145,6 @@ export async function matchAndNotify(
     }
 
     if (alert.notify_email) {
-      // Fetch user email from auth.users via admin API
       const { data: userData } = await supabase.auth.admin.getUserById(
         alert.user_id
       );
@@ -125,7 +164,7 @@ export async function matchAndNotify(
           alert.user_id,
           courseName,
           matching,
-          bookingLink,
+          pushUrl,
           targetDate
         ),
         channel: "push",
@@ -136,6 +175,17 @@ export async function matchAndNotify(
     const settled = await Promise.allSettled(
       notifications.map((n) => n.promise)
     );
+
+    // Update channels_sent on the notification record
+    if (notificationId) {
+      const channelsSent = settled
+        .map((r, i) => (r.status === "fulfilled" ? notifications[i].channel : null))
+        .filter(Boolean) as string[];
+      await supabase
+        .from("alert_notifications")
+        .update({ channels_sent: channelsSent })
+        .eq("id", notificationId);
+    }
 
     // Mark alert as triggered
     await supabase
