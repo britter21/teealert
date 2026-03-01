@@ -50,7 +50,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "What is a recurring alert?",
         answer:
-          "A recurring alert repeats every week on the days you choose. For example, if you play every Saturday morning, set a recurring alert for Saturdays and it will automatically monitor each upcoming Saturday for you\u2014no need to create a new alert each week. After we find tee times and notify you for this Saturday, the alert moves to next Saturday and keeps going. Recurring alerts are available on the Unlimited plan.",
+          "A recurring alert monitors every week on the days you choose\u2014like having a separate alert for every upcoming Saturday, but without the hassle of creating one each week. For example, if you always play Saturday mornings, set a recurring alert for Saturdays and we'll automatically watch for tee times every Saturday going forward. Recurring alerts are available on the Unlimited plan.",
       },
       {
         question: "What does \"Start monitoring\" mean?",
@@ -60,7 +60,7 @@ const faqs: { category: string; items: FAQItem[] }[] = [
       {
         question: "What happens after an alert is triggered?",
         answer:
-          "We send your notification and keep monitoring\u2014if more tee times open up later, you'll get another alert. You won't get spammed though; we only notify you about genuinely new availability. One-time alerts stay active until the date passes. Recurring alerts also keep monitoring through the current date, then automatically advance to the next matching day once the date has passed. You can view your full notification history from the dashboard.",
+          "We send your notification and keep monitoring\u2014if more tee times open up later, you'll get another alert. You won't get spammed though; we only notify you about genuinely new availability. One-time alerts stay active until the date passes. Recurring alerts work the same way for each week\u2014once this Saturday passes, we start watching next Saturday automatically. You can view your full notification history from the dashboard.",
       },
     ],
   },
