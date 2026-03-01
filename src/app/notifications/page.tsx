@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PullToRefresh } from "@/components/pull-to-refresh";
 
@@ -50,19 +51,36 @@ function formatRelativeTime(iso: string): string {
 const PAGE_SIZE = 20;
 
 export default function NotificationsPage() {
+  const searchParams = useSearchParams();
+  const alertId = searchParams.get("alert");
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [alertCourseName, setAlertCourseName] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async (offset = 0, append = false) => {
-    const res = await fetch(`/api/notifications?limit=${PAGE_SIZE}&offset=${offset}`);
+    const params = new URLSearchParams({
+      limit: String(PAGE_SIZE),
+      offset: String(offset),
+    });
+    if (alertId) params.set("alert_id", alertId);
+
+    const res = await fetch(`/api/notifications?${params}`);
     if (res.ok) {
       const data = await res.json();
-      setNotifications((prev) => append ? [...prev, ...data.notifications] : data.notifications);
+      const notifs = append ? [...notifications, ...data.notifications] : data.notifications;
+      setNotifications(notifs);
       setTotal(data.total ?? 0);
+
+      // Extract course name from first notification for the header
+      if (alertId && data.notifications.length > 0 && !alertCourseName) {
+        setAlertCourseName(data.notifications[0].course_name);
+      }
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alertId]);
 
   useEffect(() => {
     fetchNotifications().finally(() => setLoading(false));
@@ -105,8 +123,21 @@ export default function NotificationsPage() {
             Notifications
           </h1>
           <p className="mt-2 text-[var(--color-sand-muted)]">
-            Your alert history
+            {alertId && alertCourseName
+              ? `Alert history for ${alertCourseName}`
+              : "Your alert history"}
           </p>
+          {alertId && (
+            <Link
+              href="/notifications"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-glow)]"
+            >
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+              </svg>
+              View all notifications
+            </Link>
+          )}
         </div>
         {hasUnread && (
           <Button
@@ -127,7 +158,9 @@ export default function NotificationsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
             </svg>
           </div>
-          <p className="mb-2 text-[var(--color-sand-muted)]">No notifications yet.</p>
+          <p className="mb-2 text-[var(--color-sand-muted)]">
+            {alertId ? "No notifications for this alert yet." : "No notifications yet."}
+          </p>
           <p className="text-sm text-[var(--color-sand-muted)]/60">
             When your alerts find matching tee times, they&apos;ll appear here.
           </p>

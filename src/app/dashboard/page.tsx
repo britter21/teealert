@@ -137,11 +137,8 @@ export default function DashboardPage() {
     }
   }
 
-  const activeAlerts = alerts.filter((a) => a.is_active && !a.triggered_at);
-  const triggeredAlerts = alerts.filter((a) => a.triggered_at);
-  const inactiveAlerts = alerts.filter(
-    (a) => !a.is_active && !a.triggered_at
-  );
+  const activeAlerts = alerts.filter((a) => a.is_active);
+  const inactiveAlerts = alerts.filter((a) => !a.is_active);
 
   if (loading) {
     return (
@@ -270,16 +267,6 @@ export default function DashboardPage() {
               title="Active Alerts"
               description="Monitoring for new tee times"
               alerts={activeAlerts}
-              onDelete={handleDelete}
-              onEdit={setEditingAlert}
-              onToggleActive={handleToggleActive}
-            />
-          )}
-          {triggeredAlerts.length > 0 && (
-            <AlertSection
-              title="Triggered"
-              description="Alerts that found matching tee times"
-              alerts={triggeredAlerts}
               onDelete={handleDelete}
               onEdit={setEditingAlert}
               onToggleActive={handleToggleActive}
@@ -508,16 +495,20 @@ function AlertCard({
             </svg>
           </a>
         )}
-        {!alert.triggered_at && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
-            onClick={() => onToggleActive(alert.id, alert.is_active)}
-          >
-            {alert.is_active ? "Pause" : "Resume"}
-          </Button>
-        )}
+        <Link
+          href={`/notifications?alert=${alert.id}`}
+          className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-medium text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
+        >
+          History
+        </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs text-[var(--color-sand-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-sand)]"
+          onClick={() => onToggleActive(alert.id, alert.is_active)}
+        >
+          {alert.is_active ? "Pause" : "Resume"}
+        </Button>
         <Button
           variant="ghost"
           size="sm"
