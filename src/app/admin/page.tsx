@@ -9,7 +9,7 @@ interface Overview {
   activeCourses: number;
   totalAlerts: number;
   activeAlerts: number;
-  triggeredLast7d: number;
+  notificationsLast7d: number;
   totalUsers: number;
   activeSubscriptions: number;
   totalNotifications: number;
@@ -248,7 +248,7 @@ export default function AdminPage() {
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Users" value={o.totalUsers} sub={`${o.activeSubscriptions} subscribed`} />
         <StatCard label="Active Alerts" value={o.activeAlerts} sub={`${o.totalAlerts} total`} />
-        <StatCard label="Triggered (7d)" value={o.triggeredLast7d} />
+        <StatCard label="Notified (7d)" value={o.notificationsLast7d} />
         <StatCard label="Notifications" value={o.totalNotifications} sub={o.failedNotifications > 0 ? `${o.failedNotifications} failed` : "0 failed"} />
         <StatCard label="Courses" value={o.activeCourses} sub={`${o.totalCourses} total`} />
       </div>

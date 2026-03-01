@@ -115,7 +115,6 @@ export async function GET(request: NextRequest) {
         .from("alerts")
         .select("course_id, target_date")
         .eq("is_active", true)
-        .is("triggered_at", null)
         .lte("start_monitoring_date", today)
         .gte("target_date", today);
       if (error) throw error;
@@ -264,7 +263,6 @@ export async function GET(request: NextRequest) {
           is_recurring: false,
           recurrence_days: null,
           start_monitoring_date: today,
-          triggered_at: null,
         })
         .select("id")
         .single();
@@ -455,7 +453,6 @@ export async function GET(request: NextRequest) {
         .eq("course_id", course.id)
         .eq("target_date", testDate)
         .eq("is_active", true)
-        .is("triggered_at", null)
         .lte("start_monitoring_date", today);
 
       if (error) throw error;

@@ -96,13 +96,12 @@ describe("start_monitoring_date gating logic", () => {
   interface AlertWithMonitoring extends AlertRow {
     start_monitoring_date: string;
     is_active: boolean;
-    triggered_at: string | null;
+
   }
 
   function filterEligibleAlerts(alerts: AlertWithMonitoring[], today: string): AlertRow[] {
     return alerts
       .filter((a) => a.is_active)
-      .filter((a) => a.triggered_at === null)
       .filter((a) => a.start_monitoring_date <= today)
       .filter((a) => a.target_date >= today);
   }
@@ -114,7 +113,7 @@ describe("start_monitoring_date gating logic", () => {
         target_date: "2026-03-15",
         start_monitoring_date: "2026-03-10", // 5 days before
         is_active: true,
-        triggered_at: null,
+
       },
     ];
 
@@ -128,20 +127,6 @@ describe("start_monitoring_date gating logic", () => {
     expect(filterEligibleAlerts(alerts, "2026-03-14")).toHaveLength(1);
   });
 
-  it("excludes already-triggered alerts", () => {
-    const alerts: AlertWithMonitoring[] = [
-      {
-        course_id: "course-A",
-        target_date: "2026-03-07",
-        start_monitoring_date: "2026-03-01",
-        is_active: true,
-        triggered_at: "2026-03-05T12:00:00Z", // already fired
-      },
-    ];
-
-    expect(filterEligibleAlerts(alerts, "2026-03-06")).toHaveLength(0);
-  });
-
   it("excludes paused alerts", () => {
     const alerts: AlertWithMonitoring[] = [
       {
@@ -149,7 +134,7 @@ describe("start_monitoring_date gating logic", () => {
         target_date: "2026-03-07",
         start_monitoring_date: "2026-03-01",
         is_active: false,
-        triggered_at: null,
+
       },
     ];
 
@@ -163,7 +148,7 @@ describe("start_monitoring_date gating logic", () => {
         target_date: "2026-03-05",
         start_monitoring_date: "2026-03-01",
         is_active: true,
-        triggered_at: null,
+
       },
     ];
 
@@ -179,7 +164,7 @@ describe("start_monitoring_date gating logic", () => {
         target_date: "2026-03-14",
         start_monitoring_date: "2026-03-09",
         is_active: true,
-        triggered_at: null,
+
       },
     ];
 

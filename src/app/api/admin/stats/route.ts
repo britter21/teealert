@@ -19,7 +19,7 @@ export async function GET() {
     coursesResult,
     alertsResult,
     activeAlertsResult,
-    triggeredAlertsResult,
+    notificationsLast7dResult,
     usersResult,
     subscriptionsResult,
     notificationsResult,
@@ -35,9 +35,9 @@ export async function GET() {
     // Total alerts
     service.from("alerts").select("id", { count: "exact", head: true }),
     // Active alerts
-    service.from("alerts").select("id", { count: "exact", head: true }).eq("is_active", true).is("triggered_at", null),
-    // Triggered alerts (last 7 days)
-    service.from("alerts").select("id", { count: "exact", head: true }).not("triggered_at", "is", null).gte("triggered_at", new Date(Date.now() - 7 * 86400000).toISOString()),
+    service.from("alerts").select("id", { count: "exact", head: true }).eq("is_active", true),
+    // Notifications sent (last 7 days)
+    service.from("alert_notifications").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString()),
     // Total users
     service.from("user_profiles").select("id", { count: "exact", head: true }),
     // Active subscriptions
@@ -51,7 +51,7 @@ export async function GET() {
     // Open support requests
     service.from("support_requests").select("id, category, subject, status, created_at, user_id").order("created_at", { ascending: false }).limit(20),
     // Alerts by course (top 10)
-    service.from("alerts").select("course_id, courses(name)").eq("is_active", true).is("triggered_at", null),
+    service.from("alerts").select("course_id, courses(name)").eq("is_active", true),
     // Users by tier
     service.from("user_profiles").select("tier"),
     // Recent signups (last 7 days)
@@ -98,7 +98,7 @@ export async function GET() {
       activeCourses,
       totalAlerts: alertsResult.count || 0,
       activeAlerts: activeAlertsResult.count || 0,
-      triggeredLast7d: triggeredAlertsResult.count || 0,
+      notificationsLast7d: notificationsLast7dResult.count || 0,
       totalUsers: usersResult.count || 0,
       activeSubscriptions: subscriptionsResult.data?.length || 0,
       totalNotifications: notificationsResult.count || 0,

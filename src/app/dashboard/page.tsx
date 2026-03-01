@@ -23,7 +23,6 @@ interface Alert {
   max_price: number | null;
   holes: number[] | null;
   is_active: boolean;
-  triggered_at: string | null;
   created_at: string;
   start_monitoring_date: string | null;
   is_recurring: boolean;

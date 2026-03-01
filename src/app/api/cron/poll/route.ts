@@ -128,7 +128,7 @@ async function advanceRecurringAlerts() {
     if (nextDate) {
       await supabase
         .from("alerts")
-        .update({ target_date: nextDate, triggered_at: null })
+        .update({ target_date: nextDate })
         .eq("id", alert.id);
     }
   }
@@ -147,7 +147,6 @@ async function handler() {
     .from("alerts")
     .select("course_id, target_date")
     .eq("is_active", true)
-    .is("triggered_at", null)
     .lte("start_monitoring_date", today)
     .gte("target_date", today);
 
