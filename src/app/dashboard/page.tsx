@@ -137,8 +137,11 @@ export default function DashboardPage() {
     }
   }
 
-  const activeAlerts = alerts.filter((a) => a.is_active);
-  const inactiveAlerts = alerts.filter((a) => !a.is_active);
+  const today = new Date().toISOString().split("T")[0];
+  const isExpired = (a: Alert) => !a.is_recurring && a.target_date < today;
+  const activeAlerts = alerts.filter((a) => a.is_active && !isExpired(a));
+  const expiredAlerts = alerts.filter((a) => isExpired(a));
+  const inactiveAlerts = alerts.filter((a) => !a.is_active && !isExpired(a));
 
   if (loading) {
     return (
@@ -277,6 +280,16 @@ export default function DashboardPage() {
               title="Paused"
               description="Alerts that are currently paused"
               alerts={inactiveAlerts}
+              onDelete={handleDelete}
+              onEdit={setEditingAlert}
+              onToggleActive={handleToggleActive}
+            />
+          )}
+          {expiredAlerts.length > 0 && (
+            <AlertSection
+              title="Expired"
+              description="Alerts for dates that have passed"
+              alerts={expiredAlerts}
               onDelete={handleDelete}
               onEdit={setEditingAlert}
               onToggleActive={handleToggleActive}
@@ -426,7 +439,14 @@ function AlertCard({
               {monitoring}
             </Badge>
           )}
-          {alert.triggered_at ? (
+          {!alert.is_recurring && alert.target_date < new Date().toISOString().split("T")[0] ? (
+            <Badge
+              variant="secondary"
+              className="border-0 bg-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
+            >
+              Expired
+            </Badge>
+          ) : alert.triggered_at ? (
             <Badge className="border-0 bg-[var(--color-sage)]/15 text-xs text-[var(--color-sage)]">
               Triggered
             </Badge>

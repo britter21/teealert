@@ -614,7 +614,7 @@ export default function SettingsPage() {
                 <div className="rounded-lg bg-[var(--color-surface-raised)] p-3">
                   <p className="text-xs text-[var(--color-sand-muted)]">
                     To receive push notifications, install this app to your home screen:
-                    tap the share button, then &quot;Add to Home Screen.&quot;
+                    tap the &bull;&bull;&bull; menu in the address bar, then the share icon, then &quot;Add to Home Screen.&quot;
                   </p>
                 </div>
               </div>
