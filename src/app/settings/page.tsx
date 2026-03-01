@@ -78,6 +78,7 @@ export default function SettingsPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [testingPush, setTestingPush] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -449,6 +450,34 @@ export default function SettingsPage() {
                       : "Disabled"}
                 </Label>
               </div>
+              {pushSubscribed && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={testingPush}
+                  onClick={async () => {
+                    setTestingPush(true);
+                    setPushMessage(null);
+                    try {
+                      const res = await fetch("/api/push/test", { method: "POST" });
+                      if (res.ok) {
+                        setPushMessage({ type: "success", text: "Test notification sent! Check your device." });
+                      } else {
+                        const data = await res.json();
+                        setPushMessage({ type: "error", text: data.error || "Failed to send test notification." });
+                      }
+                    } catch {
+                      setPushMessage({ type: "error", text: "Failed to send test notification." });
+                    } finally {
+                      setTestingPush(false);
+                    }
+                  }}
+                  className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-cream)]"
+                >
+                  {testingPush ? "Sending..." : "Send Test"}
+                </Button>
+              )}
             </div>
 
             {pushMessage && (

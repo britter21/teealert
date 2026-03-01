@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertFormDialog } from "@/components/alert-form-dialog";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
+import { InstallPrompt } from "@/components/install-prompt";
 import { ReferralCard } from "@/components/referral-card";
 import { getBookingUrl } from "@/lib/booking-url";
 
@@ -209,6 +210,8 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      <InstallPrompt />
 
       {showOnboarding && (
         <OnboardingChecklist
