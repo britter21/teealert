@@ -57,11 +57,6 @@ const faqs: { category: string; items: FAQItem[] }[] = [
         answer:
           "This lets you control when we start checking for tee times. \"Immediately\" means we start looking right away. Other options delay monitoring until closer to your tee time date. For example, if your target date is March 15 and you choose \"1 week,\" we won't start checking until March 8. This is useful if you're a last-minute planner and don't want alerts weeks in advance, or if you'd rather not commit to a booking too far ahead\u2014maybe you're not sure if you can play until closer to the date, or you don't want to get charged for a round you might not make.",
       },
-      {
-        question: "What happens after an alert is triggered?",
-        answer:
-          "We send your notification and keep monitoring\u2014if more tee times open up later, you'll get another alert. You won't get spammed though; we only notify you about genuinely new availability. One-time alerts stay active until the date passes. Recurring alerts work the same way for each week\u2014once this Saturday passes, we start watching next Saturday automatically. You can view your full notification history from the dashboard.",
-      },
     ],
   },
   {
