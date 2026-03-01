@@ -13,6 +13,7 @@ const ADMIN_USER_ID = "3cefdaf3-2f71-4c83-88c3-dfe2f080ebe1";
 const publicLinks = [
   { href: "/courses", label: "Courses" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 const authLinks = [
