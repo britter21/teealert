@@ -29,6 +29,7 @@ interface PollCourseBody {
 }
 
 async function handler(request: Request) {
+  const start = Date.now();
   const body: PollCourseBody = await request.json();
   const { courseId, date } = body;
 
@@ -63,6 +64,19 @@ async function handler(request: Request) {
       );
     }
 
+    // Log successful poll
+    await supabase.from("poll_results").insert({
+      course_id: course.id,
+      course_name: course.name,
+      target_date: date,
+      platform: course.platform,
+      status: "success",
+      tee_times_found: times.length,
+      new_times_found: newTimes.length,
+      notifications_sent: notifications.length,
+      duration_ms: Date.now() - start,
+    });
+
     return Response.json({
       course: course.name,
       date,
@@ -72,6 +86,18 @@ async function handler(request: Request) {
     });
   } catch (err) {
     console.error(`Poll failed for ${course.name} on ${date}:`, err);
+
+    // Log failed poll
+    await supabase.from("poll_results").insert({
+      course_id: course.id,
+      course_name: course.name,
+      target_date: date,
+      platform: course.platform,
+      status: "error",
+      error_message: (err as Error).message,
+      duration_ms: Date.now() - start,
+    });
+
     return Response.json(
       { course: course.name, date, error: (err as Error).message },
       { status: 502 }

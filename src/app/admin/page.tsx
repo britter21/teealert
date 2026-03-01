@@ -88,6 +88,18 @@ interface SmokeTestResult {
   stages: SmokeStage[];
 }
 
+interface PollHealthData {
+  period: string;
+  totalPolls: number;
+  successes: number;
+  errors: number;
+  errorRate: string;
+  avgDurationMs: number;
+  byPlatform: Record<string, { total: number; errors: number; avgMs: number }>;
+  errorsByCourse: Record<string, { count: number; lastError: string; lastAt: string }>;
+  recentErrors: { course: string; date: string; error: string; at: string }[];
+}
+
 interface Stats {
   overview: Overview;
   platforms: Record<string, number>;
@@ -132,6 +144,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [qstash, setQstash] = useState<QStashData | null>(null);
+  const [pollHealth, setPollHealth] = useState<PollHealthData | null>(null);
   const [smokeTest, setSmokeTest] = useState<SmokeTestResult | null>(null);
   const [smokeLoading, setSmokeLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -158,9 +171,10 @@ export default function AdminPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const [statsRes, qstashRes] = await Promise.all([
+      const [statsRes, qstashRes, healthRes] = await Promise.all([
         fetch("/api/admin/stats"),
         fetch("/api/admin/qstash"),
+        fetch("/api/admin/poll-health"),
       ]);
       if (statsRes.status === 403) {
         setError("Access denied.");
@@ -172,6 +186,7 @@ export default function AdminPage() {
       }
       setStats(await statsRes.json());
       if (qstashRes.ok) setQstash(await qstashRes.json());
+      if (healthRes.ok) setPollHealth(await healthRes.json());
       setLastRefresh(new Date());
     } catch {
       setError("Failed to load stats.");
@@ -338,6 +353,99 @@ export default function AdminPage() {
             <p className="text-sm text-[var(--color-terracotta)]">
               No polling schedule found. QStash may not be configured.
             </p>
+          )}
+        </div>
+      )}
+
+      {/* Poll Health */}
+      {pollHealth && (
+        <div className="mb-8 rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-5">
+          <h2 className="mb-4 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
+            Poll Results ({pollHealth.period})
+          </h2>
+          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Total Polls</p>
+              <p className="mt-1 text-lg text-[var(--color-cream)]">{pollHealth.totalPolls}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Successes</p>
+              <p className="mt-1 text-lg text-[var(--color-sage)]">{pollHealth.successes}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Errors</p>
+              <p className={`mt-1 text-lg ${pollHealth.errors > 0 ? "text-[var(--color-terracotta)]" : "text-[var(--color-cream)]"}`}>
+                {pollHealth.errors}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Error Rate</p>
+              <p className={`mt-1 text-lg ${
+                pollHealth.errorRate !== "N/A" && parseFloat(pollHealth.errorRate) > 10
+                  ? "text-[var(--color-terracotta)]"
+                  : "text-[var(--color-cream)]"
+              }`}>
+                {pollHealth.errorRate}
+              </p>
+            </div>
+          </div>
+
+          {/* Platform breakdown */}
+          {Object.keys(pollHealth.byPlatform).length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">By Platform</p>
+              <div className="space-y-1">
+                {Object.entries(pollHealth.byPlatform).map(([platform, data]) => (
+                  <div key={platform} className="flex items-center justify-between text-sm">
+                    <span className="capitalize text-[var(--color-sand)]">{platform}</span>
+                    <span className="text-[var(--color-charcoal-text)]">
+                      {data.total} polls · {data.errors} errors · {data.avgMs}ms avg
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Errors by course */}
+          {Object.keys(pollHealth.errorsByCourse).length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Errors by Course</p>
+              <div className="space-y-2">
+                {Object.entries(pollHealth.errorsByCourse).map(([course, data]) => (
+                  <div key={course} className="rounded-lg bg-[var(--color-surface-raised)]/50 px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--color-sand)]">{course}</span>
+                      <Badge className="border-0 bg-[var(--color-terracotta)]/15 text-xs text-[var(--color-terracotta)]">
+                        {data.count} errors
+                      </Badge>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-[var(--color-sand-muted)]">{data.lastError}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent errors */}
+          {pollHealth.recentErrors.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">Recent Errors</p>
+              <div className="max-h-40 space-y-1 overflow-y-auto">
+                {pollHealth.recentErrors.map((e, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-terracotta)]" />
+                    <span className="w-16 shrink-0 text-[var(--color-sand-muted)]">{timeAgo(e.at)}</span>
+                    <span className="truncate text-[var(--color-sand)]">{e.course}</span>
+                    <span className="truncate text-[var(--color-sand-muted)]">{e.error}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pollHealth.totalPolls === 0 && (
+            <p className="text-sm text-[var(--color-sand-muted)]">No poll results in the last hour.</p>
           )}
         </div>
       )}
