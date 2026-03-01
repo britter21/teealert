@@ -8,6 +8,7 @@ import { AlertFormDialog } from "@/components/alert-form-dialog";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { InstallPrompt } from "@/components/install-prompt";
 import { ReferralCard } from "@/components/referral-card";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { getBookingUrl } from "@/lib/booking-url";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -156,6 +157,7 @@ export default function DashboardPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={fetchAlerts}>
     <div className="mx-auto max-w-6xl px-6 py-10 md:py-16">
       <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -318,6 +320,7 @@ export default function DashboardPage() {
         />
       )}
     </div>
+    </PullToRefresh>
   );
 }
 

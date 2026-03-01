@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 
 interface Notification {
   id: string;
@@ -95,6 +96,7 @@ export default function NotificationsPage() {
   }
 
   return (
+    <PullToRefresh onRefresh={() => fetchNotifications()}>
     <div className="mx-auto max-w-2xl px-6 py-10 md:py-16">
       <div className="mb-8 flex items-start justify-between">
         <div>
@@ -195,5 +197,6 @@ export default function NotificationsPage() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   );
 }
