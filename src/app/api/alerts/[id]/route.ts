@@ -35,6 +35,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (body.start_monitoring_date && !DATE_RE.test(body.start_monitoring_date)) {
     return Response.json({ error: "Invalid start_monitoring_date (YYYY-MM-DD)" }, { status: 400 });
   }
+  if (body.recurrence_window_days != null && (body.recurrence_window_days < 1 || body.recurrence_window_days > 90)) {
+    return Response.json({ error: "recurrence_window_days must be 1-90" }, { status: 400 });
+  }
 
   // Only allow updating specific fields
   const allowed: Record<string, unknown> = {};
@@ -52,6 +55,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   if (body.is_recurring !== undefined) allowed.is_recurring = body.is_recurring;
   if (body.recurrence_days !== undefined)
     allowed.recurrence_days = body.recurrence_days;
+  if (body.recurrence_window_days !== undefined)
+    allowed.recurrence_window_days = body.recurrence_window_days;
   if (body.is_active !== undefined) allowed.is_active = !!body.is_active;
 
   if (Object.keys(allowed).length === 0) {

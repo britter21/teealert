@@ -84,6 +84,10 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Invalid start_monitoring_date (YYYY-MM-DD)" }, { status: 400 });
   }
 
+  if (body.recurrence_window_days != null && (body.recurrence_window_days < 1 || body.recurrence_window_days > 90)) {
+    return Response.json({ error: "recurrence_window_days must be 1-90" }, { status: 400 });
+  }
+
   // Recurring alerts require Unlimited plan
   if (body.is_recurring) {
     const tier = (await canCreateAlert(user.id)).tier;
@@ -125,6 +129,7 @@ export async function POST(request: NextRequest) {
       start_monitoring_date: body.start_monitoring_date || body.target_date,
       is_recurring: body.is_recurring ?? false,
       recurrence_days: body.recurrence_days || null,
+      recurrence_window_days: body.recurrence_window_days || 30,
     })
     .select()
     .single();

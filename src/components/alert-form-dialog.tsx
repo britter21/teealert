@@ -18,12 +18,21 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const PLAYER_OPTIONS = [1, 2, 3, 4];
 const LEAD_DAY_OPTIONS = [
   { value: "", label: "Immediately" },
-  { value: "1", label: "1 day before" },
-  { value: "3", label: "3 days before" },
-  { value: "5", label: "5 days before" },
-  { value: "7", label: "1 week before" },
-  { value: "14", label: "2 weeks before" },
-  { value: "30", label: "30 days before" },
+  { value: "1", label: "1 day" },
+  { value: "3", label: "3 days" },
+  { value: "5", label: "5 days" },
+  { value: "7", label: "1 week" },
+  { value: "14", label: "2 weeks" },
+  { value: "30", label: "30 days" },
+  { value: "custom", label: "Custom" },
+];
+
+const WINDOW_OPTIONS = [
+  { value: "14", label: "2 weeks" },
+  { value: "30", label: "30 days" },
+  { value: "60", label: "60 days" },
+  { value: "90", label: "90 days" },
+  { value: "custom", label: "Custom" },
 ];
 
 interface AlertData {
@@ -37,6 +46,7 @@ interface AlertData {
   start_monitoring_date: string | null;
   is_recurring: boolean;
   recurrence_days: number[] | null;
+  recurrence_window_days: number | null;
 }
 
 interface AlertDefaults {
@@ -93,36 +103,60 @@ export function AlertFormDialog({
     min_players: "4",
     max_price: "",
     lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
+    lead_days_custom: "",
     is_recurring: false,
     recurrence_days: [] as number[],
+    recurrence_window: "30",
+    recurrence_window_custom: "",
   });
 
   // Populate form from existing alert (edit) or user defaults (create)
   useEffect(() => {
     if (existingAlert) {
+      const leadDaysValue = (() => {
+        if (!existingAlert.start_monitoring_date || !existingAlert.target_date) return "";
+        const today = new Date().toISOString().split("T")[0];
+        if (existingAlert.start_monitoring_date <= today) return "";
+        const diff = Math.max(
+          0,
+          Math.round(
+            (new Date(existingAlert.target_date).getTime() -
+              new Date(existingAlert.start_monitoring_date).getTime()) /
+              86400000
+          )
+        );
+        const diffStr = String(diff);
+        const isPreset = LEAD_DAY_OPTIONS.some((o) => o.value === diffStr);
+        return isPreset ? diffStr : "custom";
+      })();
+      const leadDaysCustom = leadDaysValue === "custom"
+        ? (() => {
+            const diff = Math.max(
+              0,
+              Math.round(
+                (new Date(existingAlert.target_date).getTime() -
+                  new Date(existingAlert.start_monitoring_date!).getTime()) /
+                  86400000
+              )
+            );
+            return String(diff);
+          })()
+        : "";
+      const windowDays = existingAlert.recurrence_window_days || 30;
+      const windowStr = String(windowDays);
+      const isWindowPreset = WINDOW_OPTIONS.some((o) => o.value === windowStr);
       setForm({
         target_date: existingAlert.target_date || defaultDate,
         earliest_time: (existingAlert.earliest_time || "06:00").slice(0, 5),
         latest_time: (existingAlert.latest_time || "18:00").slice(0, 5),
         min_players: String(existingAlert.min_players || 1),
         max_price: existingAlert.max_price ? String(existingAlert.max_price) : "",
-        lead_days: (() => {
-          if (!existingAlert.start_monitoring_date || !existingAlert.target_date) return "";
-          const today = new Date().toISOString().split("T")[0];
-          // If monitoring already started (start_monitoring_date <= today), show "Immediately"
-          if (existingAlert.start_monitoring_date <= today) return "";
-          const diff = Math.max(
-            0,
-            Math.round(
-              (new Date(existingAlert.target_date).getTime() -
-                new Date(existingAlert.start_monitoring_date).getTime()) /
-                86400000
-            )
-          );
-          return String(diff);
-        })(),
+        lead_days: leadDaysValue,
+        lead_days_custom: leadDaysCustom,
         is_recurring: existingAlert.is_recurring || false,
         recurrence_days: existingAlert.recurrence_days || [],
+        recurrence_window: isWindowPreset ? windowStr : "custom",
+        recurrence_window_custom: isWindowPreset ? "" : windowStr,
       });
     } else if (open) {
       // Apply pre-fetched user defaults instantly (no network call)
@@ -135,8 +169,11 @@ export function AlertFormDialog({
           min_players: d.min_players ? String(d.min_players) : "4",
           max_price: d.max_price != null ? String(d.max_price) : "",
           lead_days: d.lead_days != null ? d.lead_days : (bookingWindowDays ? String(bookingWindowDays) : ""),
+          lead_days_custom: "",
           is_recurring: d.is_recurring ?? false,
           recurrence_days: d.recurrence_days?.length ? d.recurrence_days : [],
+          recurrence_window: "30",
+          recurrence_window_custom: "",
         });
       } else {
         setForm({
@@ -146,8 +183,11 @@ export function AlertFormDialog({
           min_players: "4",
           max_price: "",
           lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
+          lead_days_custom: "",
           is_recurring: false,
           recurrence_days: [],
+          recurrence_window: "30",
+          recurrence_window_custom: "",
         });
       }
     }
@@ -166,14 +206,27 @@ export function AlertFormDialog({
     });
   }
 
+  function getLeadDays(): number {
+    if (!form.lead_days) return 0;
+    if (form.lead_days === "custom") return Number(form.lead_days_custom) || 0;
+    return Number(form.lead_days);
+  }
+
   function computeStartDate(): string {
-    if (!form.lead_days) {
-      // "Immediately" — start monitoring today
+    const days = getLeadDays();
+    if (!days) {
       return new Date().toISOString().split("T")[0];
     }
     const target = new Date(form.target_date);
-    target.setDate(target.getDate() - Number(form.lead_days));
+    target.setDate(target.getDate() - days);
     return target.toISOString().split("T")[0];
+  }
+
+  function getWindowDays(): number {
+    if (form.recurrence_window === "custom") {
+      return Math.min(Math.max(Number(form.recurrence_window_custom) || 30, 1), 90);
+    }
+    return Number(form.recurrence_window) || 30;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -195,6 +248,7 @@ export function AlertFormDialog({
           form.is_recurring && form.recurrence_days.length > 0
             ? form.recurrence_days
             : null,
+        recurrence_window_days: form.is_recurring ? getWindowDays() : 30,
         holes: [9, 18],
         notify_sms: true,
         notify_email: true,
@@ -286,27 +340,70 @@ export function AlertFormDialog({
 
           {/* Day picker for recurring */}
           {form.is_recurring && (
-            <div className="grid gap-2">
-              <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
-                Repeat on
-              </Label>
-              <div className="flex gap-1.5">
-                {DAY_LABELS.map((label, i) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => toggleDay(i)}
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
-                      form.recurrence_days.includes(i)
-                        ? "bg-[var(--color-terracotta)] text-white"
-                        : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+            <>
+              <div className="grid gap-2">
+                <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
+                  Repeat on
+                </Label>
+                <div className="flex gap-1.5">
+                  {DAY_LABELS.map((label, i) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => toggleDay(i)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg text-xs font-medium transition-colors ${
+                        form.recurrence_days.includes(i)
+                          ? "bg-[var(--color-terracotta)] text-white"
+                          : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+              <div className="grid gap-2">
+                <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
+                  Look ahead
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {WINDOW_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => update("recurrence_window", opt.value)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        form.recurrence_window === opt.value
+                          ? "bg-[var(--color-terracotta)] text-white"
+                          : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {form.recurrence_window === "custom" && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      max="90"
+                      placeholder="30"
+                      value={form.recurrence_window_custom}
+                      onChange={(e) => update("recurrence_window_custom", e.target.value)}
+                      className="w-20 border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
+                    />
+                    <span className="text-xs text-[var(--color-sand-muted)]">days (max 90)</span>
+                  </div>
+                )}
+                <p className="text-xs text-[var(--color-sand-muted)]">
+                  Monitor the next {getWindowDays()} days of{" "}
+                  {form.recurrence_days.length > 0
+                    ? form.recurrence_days.map((d) => DAY_LABELS[d]).join(", ") + "s"
+                    : "selected days"}
+                </p>
+              </div>
+            </>
           )}
 
           {/* Date — shown for one-time alerts, hidden for recurring (auto-computed) */}
@@ -424,7 +521,20 @@ export function AlertFormDialog({
                 </button>
               ))}
             </div>
-            {form.lead_days && !form.is_recurring && (
+            {form.lead_days === "custom" && (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Days"
+                  value={form.lead_days_custom}
+                  onChange={(e) => update("lead_days_custom", e.target.value)}
+                  className="w-20 border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)]"
+                />
+                <span className="text-xs text-[var(--color-sand-muted)]">days before</span>
+              </div>
+            )}
+            {getLeadDays() > 0 && !form.is_recurring && (
               <p className="text-xs text-[var(--color-sand-muted)]">
                 Monitoring starts {computeStartDate()}
               </p>

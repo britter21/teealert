@@ -107,7 +107,7 @@ async function getRecurringPollPairs(supabase: ReturnType<typeof createServiceCl
 
   const { data: recurringAlerts } = await supabase
     .from("alerts")
-    .select("course_id, recurrence_days")
+    .select("course_id, recurrence_days, recurrence_window_days")
     .eq("is_recurring", true)
     .eq("is_active", true)
     .lte("start_monitoring_date", todayStr);
@@ -118,8 +118,9 @@ async function getRecurringPollPairs(supabase: ReturnType<typeof createServiceCl
 
   for (const alert of recurringAlerts) {
     if (!alert.recurrence_days || alert.recurrence_days.length === 0) continue;
-    // Generate all matching dates from today through 30 days out
-    for (let i = 0; i <= 30; i++) {
+    const windowDays = Math.min(alert.recurrence_window_days || 30, 90);
+    // Generate all matching dates from today through the window
+    for (let i = 0; i <= windowDays; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       if (alert.recurrence_days.includes(d.getDay())) {

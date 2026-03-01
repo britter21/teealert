@@ -27,6 +27,7 @@ interface Alert {
   start_monitoring_date: string | null;
   is_recurring: boolean;
   recurrence_days: number[] | null;
+  recurrence_window_days: number | null;
   courses: {
     name: string;
     platform: string;
