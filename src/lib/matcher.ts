@@ -195,24 +195,10 @@ export async function matchAndNotify(
         .eq("id", notificationId);
     }
 
-    // Recurring alerts: advance to next occurrence after trigger
-    // Non-recurring alerts: keep monitoring — new tee times will come
-    // through via Redis diff, and the alert expires when the date passes
-    if (alert.is_recurring) {
-      const days = alert.recurrence_days;
-      if (days && days.length > 0) {
-        const nextDate = getNextOccurrence(days);
-        if (nextDate) {
-          await supabase
-            .from("alerts")
-            .update({
-              target_date: nextDate,
-              is_active: true,
-            })
-            .eq("id", alert.id);
-        }
-      }
-    }
+    // Both recurring and non-recurring alerts keep monitoring for new
+    // tee times until the date passes. Redis diff ensures no duplicates.
+    // Recurring alerts advance to the next date via advanceRecurringAlerts()
+    // in the poll orchestrator when the current target_date < today.
 
     // Log notifications
     for (let i = 0; i < settled.length; i++) {
