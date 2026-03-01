@@ -20,7 +20,7 @@ export async function GET() {
   // Fetch profile separately (upsert with ignoreDuplicates doesn't return data)
   const { data, error } = await service
     .from("user_profiles")
-    .select("phone, notification_phone, tier, alert_defaults")
+    .select("phone, notification_phone, tier, alert_defaults, onboarding_completed_at")
     .eq("id", user.id)
     .single();
 
@@ -34,6 +34,7 @@ export async function GET() {
     notification_phone: data.notification_phone,
     tier: data.tier,
     alert_defaults: data.alert_defaults || {},
+    onboarding_completed_at: data.onboarding_completed_at,
   });
 }
 
@@ -79,6 +80,10 @@ export async function PATCH(request: Request) {
     allowed.alert_defaults = body.alert_defaults;
   }
 
+  if (body.onboarding_completed_at !== undefined) {
+    allowed.onboarding_completed_at = body.onboarding_completed_at;
+  }
+
   if (Object.keys(allowed).length === 0) {
     return Response.json({ error: "No fields to update" }, { status: 400 });
   }
@@ -96,7 +101,7 @@ export async function PATCH(request: Request) {
     .from("user_profiles")
     .update(allowed)
     .eq("id", user.id)
-    .select("phone, notification_phone, tier, alert_defaults")
+    .select("phone, notification_phone, tier, alert_defaults, onboarding_completed_at")
     .single();
 
   if (error) {
@@ -109,5 +114,6 @@ export async function PATCH(request: Request) {
     notification_phone: data.notification_phone,
     tier: data.tier,
     alert_defaults: data.alert_defaults || {},
+    onboarding_completed_at: data.onboarding_completed_at,
   });
 }

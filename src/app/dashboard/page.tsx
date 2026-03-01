@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertFormDialog } from "@/components/alert-form-dialog";
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { getBookingUrl } from "@/lib/booking-url";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -73,15 +74,32 @@ export default function DashboardPage() {
   const [account, setAccount] = useState<AccountInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingAlert, setEditingAlert] = useState<Alert | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hasPhone, setHasPhone] = useState(false);
+  const [hasPush, setHasPush] = useState(false);
 
   const fetchAlerts = useCallback(async () => {
     try {
-      const [alertsRes, accountRes] = await Promise.all([
+      const [alertsRes, accountRes, profileRes] = await Promise.all([
         fetch("/api/alerts"),
         fetch("/api/account"),
+        fetch("/api/user/profile"),
       ]);
       if (alertsRes.ok) setAlerts(await alertsRes.json());
       if (accountRes.ok) setAccount(await accountRes.json());
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setHasPhone(!!profile.phone);
+        setShowOnboarding(!profile.onboarding_completed_at);
+      }
+      // Check push subscription
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          setHasPush(!!sub);
+        } catch {}
+      }
     } finally {
       setLoading(false);
     }
@@ -190,6 +208,22 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {showOnboarding && (
+        <OnboardingChecklist
+          hasPhone={hasPhone}
+          hasAlert={alerts.length > 0}
+          hasPush={hasPush}
+          onDismiss={async () => {
+            setShowOnboarding(false);
+            await fetch("/api/user/profile", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ onboarding_completed_at: new Date().toISOString() }),
+            });
+          }}
+        />
+      )}
 
       {alerts.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] px-6 py-16 text-center">
