@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertFormDialog } from "@/components/alert-form-dialog";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
+import { ReferralCard } from "@/components/referral-card";
 import { getBookingUrl } from "@/lib/booking-url";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -286,6 +287,11 @@ export default function DashboardPage() {
           )}
         </div>
       )}
+
+      {/* Referral card */}
+      <div className="mt-10">
+        <ReferralCard />
+      </div>
 
       {/* Edit dialog */}
       {editingAlert && (
