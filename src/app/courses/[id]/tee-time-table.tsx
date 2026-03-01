@@ -56,6 +56,7 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
   const [error, setError] = useState("");
   const [bookingClasses, setBookingClasses] = useState<BookingClass[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
+  const [playerFilter, setPlayerFilter] = useState<number>(0); // 0 = Any
 
   // Fetch booking classes on mount
   useEffect(() => {
@@ -120,6 +121,9 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
   }, [date, selectedClass, fetchTimes]);
 
   const available = times.filter((t) => t.availableSpots !== 0);
+  const filtered = playerFilter === 0
+    ? available
+    : available.filter((t) => t.availableSpots < 0 || t.availableSpots >= playerFilter);
   const showClassSelector = bookingClasses.filter((c) => !c.is_protected).length > 1;
 
   return (
@@ -170,6 +174,28 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
           </div>
         )}
 
+        <div className="grid gap-2">
+          <Label className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]">
+            Players
+          </Label>
+          <div className="flex gap-1">
+            {[{ value: 0, label: "Any" }, { value: 1, label: "1+" }, { value: 2, label: "2+" }, { value: 3, label: "3+" }, { value: 4, label: "4" }].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setPlayerFilter(opt.value)}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  playerFilter === opt.value
+                    ? "bg-[var(--color-terracotta)] text-white"
+                    : "bg-[var(--color-surface-raised)] text-[var(--color-sand-muted)] hover:text-[var(--color-sand)]"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="ml-auto flex items-end pb-0.5">
           <CreateAlertButton
             courseId={courseId}
@@ -195,7 +221,7 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
         </div>
       )}
 
-      {!loading && times.length === 0 && !error && (
+      {!loading && available.length === 0 && !error && (
         <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] px-6 py-12 text-center">
           <p className="text-[var(--color-sand-muted)]">
             No tee times available for this date.
@@ -203,20 +229,15 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
         </div>
       )}
 
-      {times.length > 0 && (
+      {available.length > 0 && (
         <>
           <div className="mb-4 flex items-center gap-3">
             <Badge
               variant="secondary"
               className="border-0 bg-[var(--color-surface-raised)] text-xs text-[var(--color-sand-muted)]"
             >
-              {times.length} tee times
+              {filtered.length} of {available.length} available
             </Badge>
-            {available.length > 0 && (
-              <Badge className="border-0 bg-[var(--color-sage)]/15 text-xs text-[var(--color-sage)]">
-                {available.length} available
-              </Badge>
-            )}
             {lastUpdated && (
               <span className="flex items-center gap-1.5 text-xs text-[var(--color-sand-muted)]">
                 <span className="pulse-available h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" />
@@ -236,6 +257,13 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
             </a>
           </div>
 
+          {filtered.length === 0 ? (
+            <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] px-6 py-12 text-center">
+              <p className="text-[var(--color-sand-muted)]">
+                No tee times with {playerFilter}+ player spots available.
+              </p>
+            </div>
+          ) : (
           <div className="overflow-hidden rounded-xl border border-[var(--color-sand)]/8">
             <table className="w-full">
               <thead>
@@ -258,12 +286,10 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-sand)]/5">
-                {times.map((t, i) => (
+                {filtered.map((t, i) => (
                   <tr
                     key={i}
-                    className={`transition-colors hover:bg-[var(--color-surface-raised)]/50 ${
-                      t.availableSpots === 0 ? "opacity-40" : ""
-                    }`}
+                    className="transition-colors hover:bg-[var(--color-surface-raised)]/50"
                   >
                     <td className="px-4 py-3.5 font-medium text-[var(--color-sand-bright)]">
                       {formatTime12h(t.time)}
@@ -272,20 +298,14 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
                       {t.holes}
                     </td>
                     <td className="px-4 py-3.5">
-                      {t.availableSpots !== 0 ? (
-                        <span className="inline-flex items-center gap-1.5 text-sm text-[var(--color-sage)]">
-                          <span className="pulse-available h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" />
-                          {t.availableSpots < 0
-                            ? "Open"
-                            : t.minPlayers && t.minPlayers < t.availableSpots
-                              ? `${t.minPlayers}\u2013${t.availableSpots}`
-                              : t.availableSpots}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-[var(--color-sand-muted)]">
-                          Full
-                        </span>
-                      )}
+                      <span className="inline-flex items-center gap-1.5 text-sm text-[var(--color-sage)]">
+                        <span className="pulse-available h-1.5 w-1.5 rounded-full bg-[var(--color-sage)]" />
+                        {t.availableSpots < 0
+                          ? "Open"
+                          : t.minPlayers && t.minPlayers < t.availableSpots
+                            ? `${t.minPlayers}\u2013${t.availableSpots}`
+                            : t.availableSpots}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5 text-sm text-[var(--color-charcoal-text)]">
                       ${t.greenFee}
@@ -298,6 +318,7 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
               </tbody>
             </table>
           </div>
+          )}
         </>
       )}
     </div>

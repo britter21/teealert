@@ -391,7 +391,16 @@ export default function SettingsPage() {
                 <span className="text-[var(--color-charcoal-text)] capitalize">
                   {profile?.tier || "starter"}
                 </span>
-                {profile?.tier === "starter" && (
+                {profile?.tier === "unlimited" ? (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="h-7 border-[var(--color-sand)]/15 px-2 text-xs text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-cream)]"
+                  >
+                    <a href="/api/portal">Manage Plan</a>
+                  </Button>
+                ) : (
                   <Button
                     asChild
                     variant="outline"
