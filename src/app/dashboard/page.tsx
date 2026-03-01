@@ -94,12 +94,17 @@ export default function DashboardPage() {
         setHasPhone(!!profile.phone);
         setShowOnboarding(!profile.onboarding_completed_at);
       }
-      // Check push subscription
+      // Check push subscription (with timeout to avoid hanging)
       if ("serviceWorker" in navigator && "PushManager" in window) {
         try {
-          const reg = await navigator.serviceWorker.ready;
-          const sub = await reg.pushManager.getSubscription();
-          setHasPush(!!sub);
+          const reg = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+          ]);
+          if (reg) {
+            const sub = await (reg as ServiceWorkerRegistration).pushManager.getSubscription();
+            setHasPush(!!sub);
+          }
         } catch {}
       }
     } finally {
