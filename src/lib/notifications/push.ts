@@ -2,11 +2,16 @@ import webpush from "web-push";
 import { createServiceClient } from "../supabase/server";
 import type { TeeTime } from "../pollers/types";
 
-webpush.setVapidDetails(
-  "mailto:alerts@teetimehawk.com",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+let vapidConfigured = false;
+function ensureVapid() {
+  if (vapidConfigured) return;
+  webpush.setVapidDetails(
+    "mailto:alerts@teetimehawk.com",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+  vapidConfigured = true;
+}
 
 function formatTime12h(time24: string): string {
   const [h, m] = time24.split(":");
@@ -53,6 +58,8 @@ export async function sendPushNotifications(
   let sent = 0;
   let failed = 0;
   const expiredIds: string[] = [];
+
+  ensureVapid();
 
   for (const sub of subs) {
     try {
