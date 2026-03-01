@@ -71,6 +71,21 @@ interface QStashData {
   eventSummary: Record<string, number>;
 }
 
+interface SmokeStage {
+  stage: string;
+  status: "pass" | "fail" | "skip";
+  duration_ms: number;
+  detail: Record<string, unknown>;
+}
+
+interface SmokeTestResult {
+  overall: string;
+  testPair?: { courseId: string; date: string };
+  totalDuration_ms?: number;
+  message?: string;
+  stages: SmokeStage[];
+}
+
 interface Stats {
   overview: Overview;
   platforms: Record<string, number>;
@@ -115,9 +130,28 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [qstash, setQstash] = useState<QStashData | null>(null);
+  const [smokeTest, setSmokeTest] = useState<SmokeTestResult | null>(null);
+  const [smokeLoading, setSmokeLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const runSmokeTest = useCallback(async () => {
+    setSmokeLoading(true);
+    setSmokeTest(null);
+    try {
+      const res = await fetch("/api/admin/smoke-test");
+      if (res.ok) {
+        setSmokeTest(await res.json());
+      } else {
+        setSmokeTest({ overall: "error", stages: [], message: `HTTP ${res.status}` });
+      }
+    } catch {
+      setSmokeTest({ overall: "error", stages: [], message: "Network error" });
+    } finally {
+      setSmokeLoading(false);
+    }
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -304,6 +338,84 @@ export default function AdminPage() {
           )}
         </div>
       )}
+
+      {/* Pipeline Smoke Test */}
+      <div className="mb-8 rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
+            Pipeline Smoke Test
+          </h2>
+          <Button
+            onClick={runSmokeTest}
+            disabled={smokeLoading}
+            size="sm"
+            className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta)]/80 disabled:opacity-50"
+          >
+            {smokeLoading ? "Running..." : "Run Test"}
+          </Button>
+        </div>
+        <p className="mb-3 text-xs text-[var(--color-sand-muted)]">
+          Exercises the full poll pipeline (query alerts → fetch tee times → Redis diff → alert matching) in dry-run mode. No notifications sent.
+        </p>
+        {smokeLoading && (
+          <div className="flex items-center gap-2 py-4">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--color-sand)]/20 border-t-[var(--color-terracotta)]" />
+            <span className="text-sm text-[var(--color-sand-muted)]">Polling platform API & running pipeline...</span>
+          </div>
+        )}
+        {smokeTest && (
+          <div className="space-y-3">
+            {/* Overall result */}
+            <div className="flex items-center gap-2">
+              <span className={`inline-block h-2.5 w-2.5 rounded-full ${
+                smokeTest.overall === "pass" ? "bg-[var(--color-sage)]"
+                : smokeTest.overall === "skip" ? "bg-[var(--color-sand)]"
+                : "bg-[var(--color-terracotta)]"
+              }`} />
+              <span className={`text-sm font-medium ${
+                smokeTest.overall === "pass" ? "text-[var(--color-sage)]"
+                : smokeTest.overall === "skip" ? "text-[var(--color-sand)]"
+                : "text-[var(--color-terracotta)]"
+              }`}>
+                {smokeTest.overall.toUpperCase()}
+              </span>
+              {smokeTest.totalDuration_ms && (
+                <span className="text-xs text-[var(--color-sand-muted)]">
+                  ({smokeTest.totalDuration_ms}ms)
+                </span>
+              )}
+              {smokeTest.testPair && (
+                <span className="text-xs text-[var(--color-sand-muted)]">
+                  — {smokeTest.testPair.courseId.slice(0, 8)}... on {smokeTest.testPair.date}
+                </span>
+              )}
+            </div>
+            {smokeTest.message && (
+              <p className="text-xs text-[var(--color-sand-muted)]">{smokeTest.message}</p>
+            )}
+
+            {/* Stage details */}
+            {smokeTest.stages.map((stage) => (
+              <div key={stage.stage} className="rounded-lg bg-[var(--color-surface-raised)]/50 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+                    stage.status === "pass" ? "bg-[var(--color-sage)]"
+                    : stage.status === "skip" ? "bg-[var(--color-sand)]"
+                    : "bg-[var(--color-terracotta)]"
+                  }`} />
+                  <span className="text-xs font-medium text-[var(--color-sand)]">
+                    {stage.stage.replace(/^\d+_/, "").replace(/_/g, " ")}
+                  </span>
+                  <span className="text-xs text-[var(--color-sand-muted)]">{stage.duration_ms}ms</span>
+                </div>
+                <pre className="mt-1 max-h-32 overflow-auto text-[10px] leading-relaxed text-[var(--color-sand-muted)]">
+                  {JSON.stringify(stage.detail, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Platform & Tier breakdown */}
