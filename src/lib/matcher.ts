@@ -5,7 +5,7 @@ import { sendPushNotifications } from "./notifications/push";
 import { getBookingUrl } from "./booking-url";
 import type { TeeTime } from "./pollers/types";
 
-function getNextOccurrence(days: number[]): string | null {
+export function getNextOccurrence(days: number[]): string | null {
   if (days.length === 0) return null;
   const now = new Date();
   // Start from tomorrow and find the next matching day of week
@@ -19,7 +19,7 @@ function getNextOccurrence(days: number[]): string | null {
   return null;
 }
 
-interface Alert {
+export interface Alert {
   id: string;
   user_id: string;
   course_id: string;
@@ -37,7 +37,7 @@ interface Alert {
   user_profiles: { phone: string | null } | null;
 }
 
-function matchesAlert(t: TeeTime, alert: Alert): boolean {
+export function matchesAlert(t: TeeTime, alert: Alert): boolean {
   if (alert.earliest_time && t.time < alert.earliest_time) return false;
   if (alert.latest_time && t.time > alert.latest_time) return false;
   // -1 means available but count unknown (Chronogolf) — treat as matching
