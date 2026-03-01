@@ -4,7 +4,11 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { pollForeUp } from "@/lib/pollers/foreup";
 import { pollChronogolf } from "@/lib/pollers/chronogolf";
 import { getRedis } from "@/lib/redis";
-import { matchesAlert, matchAndNotify, type Alert } from "@/lib/matcher";
+import { matchesAlert, type Alert } from "@/lib/matcher";
+import { sendIMessage } from "@/lib/notifications/imessage";
+import { sendAlertEmail } from "@/lib/notifications/email";
+import { sendPushNotifications } from "@/lib/notifications/push";
+import { getBookingUrl } from "@/lib/booking-url";
 import type { Course, TeeTime } from "@/lib/pollers/types";
 
 const ADMIN_USER_ID = "3cefdaf3-2f71-4c83-88c3-dfe2f080ebe1";
@@ -284,61 +288,147 @@ export async function GET(request: NextRequest) {
       return Response.json({ overall: "fail", stages });
     }
 
-    // Stage 5: Run real matchAndNotify — sends actual notifications
+    // Stage 5: Send notifications directly to admin only
+    // We do NOT call matchAndNotify because it queries ALL alerts for the
+    // course+date and would trigger other users' alerts as a side effect.
+    // Instead we send notifications directly for the admin's test alert.
     const sNotify = await timed(async () => {
-      // Pass ALL times (not just diff-new) so we guarantee matches
-      const results = await matchAndNotify(
-        course.id,
-        course.name,
-        testDate,
-        times,
+      const bookingLink = getBookingUrl(
         course.platform,
         course.platform_course_id,
+        testDate,
         course.booking_slug,
         course.platform_schedule_id
       );
+
+      // Limit to 5 tee times for the notification
+      const matchedTimes = times.slice(0, 5);
+      const matchedTimesJson = matchedTimes.map((t) => ({
+        time: t.time,
+        holes: t.holes,
+        availableSpots: t.availableSpots,
+        greenFee: t.greenFee,
+      }));
+
+      // Get course location
+      const { data: courseData } = await svc
+        .from("courses")
+        .select("location_city, location_state")
+        .eq("id", course.id)
+        .single();
+
+      // Insert alert_notification record (same as real pipeline)
+      const { data: notifRow } = await svc
+        .from("alert_notifications")
+        .insert({
+          user_id: ADMIN_USER_ID,
+          alert_id: testAlertId!,
+          course_id: course.id,
+          target_date: testDate,
+          matched_times: matchedTimesJson,
+          booking_url: bookingLink || null,
+          course_name: course.name,
+          location_city: courseData?.location_city || null,
+          location_state: courseData?.location_state || null,
+          channels_sent: [],
+        })
+        .select("id")
+        .single();
+
+      const notificationId = notifRow?.id ?? null;
+      const pushUrl = notificationId
+        ? `https://teetimehawk.com/notifications/${notificationId}`
+        : bookingLink;
+
+      // Get admin's phone and email
+      const { data: profile } = await svc
+        .from("user_profiles")
+        .select("phone")
+        .eq("id", ADMIN_USER_ID)
+        .single();
+      const { data: userData } = await svc.auth.admin.getUserById(ADMIN_USER_ID);
+      const email = userData?.user?.email;
+      const phone = profile?.phone;
+
+      // Send all three channels
+      const channelResults: { channel: string; status: string; detail?: string }[] = [];
+
+      // iMessage
+      if (phone) {
+        try {
+          await sendIMessage(phone, course.name, matchedTimes, bookingLink, testDate);
+          channelResults.push({ channel: "imessage", status: "sent" });
+        } catch (err) {
+          channelResults.push({ channel: "imessage", status: "failed", detail: (err as Error).message });
+        }
+      } else {
+        channelResults.push({ channel: "imessage", status: "skipped", detail: "no phone number" });
+      }
+
+      // Email
+      if (email) {
+        try {
+          await sendAlertEmail(email, course.name, matchedTimes, bookingLink, testDate);
+          channelResults.push({ channel: "email", status: "sent" });
+        } catch (err) {
+          channelResults.push({ channel: "email", status: "failed", detail: (err as Error).message });
+        }
+      } else {
+        channelResults.push({ channel: "email", status: "skipped", detail: "no email" });
+      }
+
+      // Push
+      try {
+        const pushResult = await sendPushNotifications(
+          ADMIN_USER_ID, course.name, matchedTimes, pushUrl, testDate
+        );
+        channelResults.push({
+          channel: "push",
+          status: pushResult.sent > 0 ? "sent" : "no_subscriptions",
+          detail: `${pushResult.sent} sent, ${pushResult.failed} failed`,
+        });
+      } catch (err) {
+        channelResults.push({ channel: "push", status: "failed", detail: (err as Error).message });
+      }
+
+      // Update channels_sent on notification record
+      const sentChannels = channelResults
+        .filter((c) => c.status === "sent")
+        .map((c) => c.channel);
+      if (notificationId) {
+        await svc
+          .from("alert_notifications")
+          .update({ channels_sent: sentChannels })
+          .eq("id", notificationId);
+      }
+
+      // Log to notification_log (same as real pipeline)
+      for (const ch of channelResults) {
+        await svc.from("notification_log").insert({
+          alert_id: testAlertId!,
+          channel: ch.channel,
+          recipient: ch.channel === "email" ? email : ch.channel === "imessage" ? phone : ADMIN_USER_ID,
+          payload: { course: course.name, times: matchedTimesJson, smokeTest: true },
+          status: ch.status === "sent" ? "sent" : "failed",
+        });
+      }
+
       return {
-        results,
-        note: "LIVE — real notifications sent to admin",
+        notificationId,
+        channelResults,
+        matchedTimesCount: matchedTimes.length,
+        note: "LIVE — notifications sent ONLY to admin. No other users affected.",
       };
     });
     stages.push({
-      stage: "5_match_and_notify_live",
+      stage: "5_send_notifications_admin_only",
       status: "pass",
       duration_ms: sNotify.ms,
       detail: sNotify.result,
     });
 
-    // Stage 6: Verify notification was created in DB
-    const sVerify = await timed(async () => {
-      const { data: notifs } = await svc
-        .from("alert_notifications")
-        .select("id, channels_sent, matched_times, created_at")
-        .eq("alert_id", testAlertId!)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      const { data: logs } = await svc
-        .from("notification_log")
-        .select("channel, status, recipient")
-        .eq("alert_id", testAlertId!);
-
-      return {
-        notificationRecord: notifs?.[0] || null,
-        notificationLogs: logs || [],
-        note: "Notification record kept in your inbox for verification",
-      };
-    });
-    stages.push({
-      stage: "6_verify_delivery",
-      status: "pass",
-      duration_ms: sVerify.ms,
-      detail: sVerify.result,
-    });
-
-    // Stage 7: Cleanup — delete test alert (keep notification record)
+    // Stage 6: Cleanup — delete test alert (keep notification record)
     const sCleanup = await timed(async () => {
-      // Delete the test alert
       const { error: deleteError } = await svc
         .from("alerts")
         .delete()
@@ -351,7 +441,7 @@ export async function GET(request: NextRequest) {
       };
     });
     stages.push({
-      stage: "7_cleanup",
+      stage: "6_cleanup",
       status: "pass",
       duration_ms: sCleanup.ms,
       detail: sCleanup.result,
