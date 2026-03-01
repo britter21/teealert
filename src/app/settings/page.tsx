@@ -413,86 +413,101 @@ export default function SettingsPage() {
         </form>
 
         {/* Push Notifications section */}
-        {pushSupported && (
-          <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6">
-            <h2 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
-              Push Notifications
-            </h2>
-            <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
-              Get instant browser notifications when tee times match your alerts. Works on mobile too — add this site to your home screen for the best experience.
-            </p>
+        <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6">
+          <h2 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
+            Push Notifications
+          </h2>
+          <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
+            Get instant notifications on your device when tee times match your alerts.
+          </p>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={pushSubscribed}
-                  disabled={pushLoading}
-                  onClick={handlePushToggle}
-                  className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
-                    pushSubscribed
-                      ? "bg-[var(--color-terracotta)]"
-                      : "bg-[var(--color-sand)]/20"
+          {pushSupported ? (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={pushSubscribed}
+                    disabled={pushLoading}
+                    onClick={handlePushToggle}
+                    className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
+                      pushSubscribed
+                        ? "bg-[var(--color-terracotta)]"
+                        : "bg-[var(--color-sand)]/20"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                        pushSubscribed ? "translate-x-4" : ""
+                      }`}
+                    />
+                  </button>
+                  <Label className="text-sm text-[var(--color-sand)]">
+                    {pushLoading
+                      ? "Updating..."
+                      : pushSubscribed
+                        ? "Enabled"
+                        : "Disabled"}
+                  </Label>
+                </div>
+                {pushSubscribed && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={testingPush}
+                    onClick={async () => {
+                      setTestingPush(true);
+                      setPushMessage(null);
+                      try {
+                        const res = await fetch("/api/push/test", { method: "POST" });
+                        if (res.ok) {
+                          setPushMessage({ type: "success", text: "Test notification sent! Check your device." });
+                        } else {
+                          const data = await res.json();
+                          setPushMessage({ type: "error", text: data.error || "Failed to send test notification." });
+                        }
+                      } catch {
+                        setPushMessage({ type: "error", text: "Failed to send test notification." });
+                      } finally {
+                        setTestingPush(false);
+                      }
+                    }}
+                    className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-cream)]"
+                  >
+                    {testingPush ? "Sending..." : "Send Test"}
+                  </Button>
+                )}
+              </div>
+
+              {pushMessage && (
+                <p
+                  className={`mt-3 text-sm ${
+                    pushMessage.type === "success"
+                      ? "text-[var(--color-sage)]"
+                      : "text-[var(--color-terracotta)]"
                   }`}
                 >
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                      pushSubscribed ? "translate-x-4" : ""
-                    }`}
-                  />
-                </button>
-                <Label className="text-sm text-[var(--color-sand)]">
-                  {pushLoading
-                    ? "Updating..."
-                    : pushSubscribed
-                      ? "Enabled"
-                      : "Disabled"}
-                </Label>
-              </div>
-              {pushSubscribed && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={testingPush}
-                  onClick={async () => {
-                    setTestingPush(true);
-                    setPushMessage(null);
-                    try {
-                      const res = await fetch("/api/push/test", { method: "POST" });
-                      if (res.ok) {
-                        setPushMessage({ type: "success", text: "Test notification sent! Check your device." });
-                      } else {
-                        const data = await res.json();
-                        setPushMessage({ type: "error", text: data.error || "Failed to send test notification." });
-                      }
-                    } catch {
-                      setPushMessage({ type: "error", text: "Failed to send test notification." });
-                    } finally {
-                      setTestingPush(false);
-                    }
-                  }}
-                  className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-cream)]"
-                >
-                  {testingPush ? "Sending..." : "Send Test"}
-                </Button>
+                  {pushMessage.text}
+                </p>
               )}
-            </div>
-
-            {pushMessage && (
-              <p
-                className={`mt-3 text-sm ${
-                  pushMessage.type === "success"
-                    ? "text-[var(--color-sage)]"
-                    : "text-[var(--color-terracotta)]"
-                }`}
-              >
-                {pushMessage.text}
+            </>
+          ) : (
+            <div className="rounded-lg bg-[var(--color-surface-raised)] p-4">
+              <p className="text-sm font-medium text-[var(--color-sand)]">
+                Install the app to enable push
               </p>
-            )}
-          </div>
-        )}
+              <p className="mt-1.5 text-xs text-[var(--color-sand-muted)]">
+                On iPhone, tap the{" "}
+                <svg className="inline h-4 w-4 align-text-bottom text-[var(--color-terracotta)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
+                </svg>
+                {" "}Share button at the bottom of Safari, then tap &ldquo;Add to Home Screen.&rdquo; Once installed, come back here to enable push notifications.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Alert Defaults section */}
         <form
