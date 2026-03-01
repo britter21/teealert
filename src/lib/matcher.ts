@@ -1,6 +1,7 @@
 import { createServiceClient } from "./supabase/server";
 import { sendIMessage } from "./notifications/imessage";
 import { sendAlertEmail } from "./notifications/email";
+import { sendPushNotifications } from "./notifications/push";
 import { getBookingUrl } from "./booking-url";
 import type { TeeTime } from "./pollers/types";
 
@@ -30,6 +31,7 @@ interface Alert {
   holes: number[] | null;
   notify_sms: boolean;
   notify_email: boolean;
+  notify_push: boolean;
   is_recurring: boolean;
   recurrence_days: number[] | null;
   user_profiles: { phone: string | null } | null;
@@ -115,6 +117,19 @@ export async function matchAndNotify(
           recipient: email,
         });
       }
+    }
+
+    if (alert.notify_push) {
+      notifications.push({
+        promise: sendPushNotifications(
+          alert.user_id,
+          courseName,
+          matching,
+          bookingLink
+        ),
+        channel: "push",
+        recipient: alert.user_id,
+      });
     }
 
     const settled = await Promise.allSettled(

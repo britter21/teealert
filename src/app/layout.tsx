@@ -18,9 +18,16 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "TeeAlert — Instant Tee Time Alerts",
+  title: "Tee Time Hawk — Instant Tee Time Alerts",
   description:
     "Get instant alerts when tee times open up at your favorite golf courses. Set your preferences and never miss a tee time again.",
+  manifest: "/manifest.json",
+  themeColor: "#4a9e6a",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Tee Time Hawk",
+  },
 };
 
 export default function RootLayout({

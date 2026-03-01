@@ -71,6 +71,13 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [phone, setPhone] = useState("");
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -120,6 +127,70 @@ export default function SettingsPage() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // Check push notification support and current subscription status
+  useEffect(() => {
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      setPushSupported(true);
+      navigator.serviceWorker.ready.then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
+        setPushSubscribed(!!sub);
+      });
+    }
+  }, []);
+
+  // Register service worker on mount
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
+  async function handlePushToggle() {
+    setPushLoading(true);
+    setPushMessage(null);
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+
+      if (pushSubscribed) {
+        // Unsubscribe
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await fetch("/api/push/unsubscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          });
+          await sub.unsubscribe();
+        }
+        setPushSubscribed(false);
+        setPushMessage({ type: "success", text: "Push notifications disabled." });
+      } else {
+        // Subscribe
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        });
+        const res = await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription: sub.toJSON() }),
+        });
+        if (!res.ok) throw new Error("Failed to save subscription");
+        setPushSubscribed(true);
+        setPushMessage({ type: "success", text: "Push notifications enabled!" });
+      }
+    } catch (err) {
+      const msg =
+        (err as Error).message === "Registration failed - permission denied"
+          ? "Permission denied. Please enable notifications in your browser settings."
+          : "Failed to update push notifications. Please try again.";
+      setPushMessage({ type: "error", text: msg });
+    } finally {
+      setPushLoading(false);
+    }
+  }
 
   function updateDefault(field: string, value: string | boolean | number[]) {
     setDefaults((prev) => ({ ...prev, [field]: value }));
@@ -339,6 +410,60 @@ export default function SettingsPage() {
             </div>
           </div>
         </form>
+
+        {/* Push Notifications section */}
+        {pushSupported && (
+          <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6">
+            <h2 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
+              Push Notifications
+            </h2>
+            <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
+              Get instant browser notifications when tee times match your alerts. Works on mobile too — add this site to your home screen for the best experience.
+            </p>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={pushSubscribed}
+                  disabled={pushLoading}
+                  onClick={handlePushToggle}
+                  className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
+                    pushSubscribed
+                      ? "bg-[var(--color-terracotta)]"
+                      : "bg-[var(--color-sand)]/20"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                      pushSubscribed ? "translate-x-4" : ""
+                    }`}
+                  />
+                </button>
+                <Label className="text-sm text-[var(--color-sand)]">
+                  {pushLoading
+                    ? "Updating..."
+                    : pushSubscribed
+                      ? "Enabled"
+                      : "Disabled"}
+                </Label>
+              </div>
+            </div>
+
+            {pushMessage && (
+              <p
+                className={`mt-3 text-sm ${
+                  pushMessage.type === "success"
+                    ? "text-[var(--color-sage)]"
+                    : "text-[var(--color-terracotta)]"
+                }`}
+              >
+                {pushMessage.text}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Alert Defaults section */}
         <form
