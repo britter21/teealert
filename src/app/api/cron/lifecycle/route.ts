@@ -7,7 +7,7 @@ import {
 const TRIAL_DAYS = 14;
 const CRON_SECRET = process.env.CRON_SECRET;
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   // Verify cron secret (QStash or simple secret)
   const authHeader = request.headers.get("authorization");
   if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
