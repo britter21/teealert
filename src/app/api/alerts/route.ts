@@ -84,6 +84,20 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Invalid start_monitoring_date (YYYY-MM-DD)" }, { status: 400 });
   }
 
+  // Recurring alerts require Unlimited plan
+  if (body.is_recurring) {
+    const tier = (await canCreateAlert(user.id)).tier;
+    if (tier === "starter") {
+      return Response.json(
+        {
+          error: "Recurring alerts require the Unlimited plan.",
+          code: "RECURRING_RESTRICTED",
+        },
+        { status: 403 }
+      );
+    }
+  }
+
   // Validate notification channels against tier
   if (body.notify_sms && !(await canUseChannel(user.id, "sms"))) {
     return Response.json(

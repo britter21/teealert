@@ -19,13 +19,15 @@ export function CreateAlertButton({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [userDefaults, setUserDefaults] = useState<Record<string, unknown> | null>(null);
+  const [userTier, setUserTier] = useState<string | undefined>(undefined);
 
-  // Pre-fetch user alert defaults once on mount so dialog opens instantly
+  // Pre-fetch user alert defaults and tier once on mount
   useEffect(() => {
     fetch("/api/user/profile")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.alert_defaults) setUserDefaults(data.alert_defaults);
+        if (data?.tier) setUserTier(data.tier);
       })
       .catch(() => {});
   }, []);
@@ -59,6 +61,7 @@ export function CreateAlertButton({
         bookingWindowDays={bookingWindowDays}
         defaultDate={defaultDate}
         userDefaults={userDefaults}
+        userTier={userTier}
       />
     </>
   );

@@ -28,6 +28,7 @@ const plans = [
     description: "Unlimited alerts with real-time monitoring.",
     features: [
       "Unlimited active alerts",
+      "Recurring weekly alerts",
       "SMS & Email notifications",
       "Real-time polling (15s)",
       "All courses & booking classes",

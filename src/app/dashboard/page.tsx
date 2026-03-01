@@ -312,6 +312,7 @@ export default function DashboardPage() {
           courseId={editingAlert.course_id}
           courseName={editingAlert.courses?.name || "Course"}
           existingAlert={editingAlert}
+          userTier={account?.tier}
           onSaved={() => {
             setEditingAlert(null);
             fetchAlerts();

@@ -653,8 +653,9 @@ export default function SettingsPage() {
                 type="button"
                 role="switch"
                 aria-checked={defaults.is_recurring}
+                disabled={profile?.tier === "starter"}
                 onClick={() => updateDefault("is_recurring", !defaults.is_recurring)}
-                className={`relative h-5 w-9 rounded-full transition-colors ${
+                className={`relative h-5 w-9 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                   defaults.is_recurring
                     ? "bg-[var(--color-terracotta)]"
                     : "bg-[var(--color-sand)]/20"
@@ -666,9 +667,17 @@ export default function SettingsPage() {
                   }`}
                 />
               </button>
-              <Label className="text-sm text-[var(--color-sand)]">
+              <Label className={`text-sm ${profile?.tier === "starter" ? "text-[var(--color-sand-muted)]" : "text-[var(--color-sand)]"}`}>
                 Default to recurring
               </Label>
+              {profile?.tier === "starter" && (
+                <Link
+                  href="/pricing"
+                  className="text-xs font-medium text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-glow)]"
+                >
+                  Unlimited only
+                </Link>
+              )}
               <InfoTip text="When enabled, new alerts will default to recurring mode, repeating on your selected days each week." />
             </div>
 

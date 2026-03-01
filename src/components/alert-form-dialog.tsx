@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +61,8 @@ interface Props {
   /** If provided, form is in edit mode */
   existingAlert?: AlertData;
   onSaved?: () => void;
+  /** User's subscription tier — "starter" disables recurring */
+  userTier?: string;
 }
 
 export function AlertFormDialog({
@@ -72,6 +75,7 @@ export function AlertFormDialog({
   userDefaults,
   existingAlert,
   onSaved,
+  userTier,
 }: Props) {
   const router = useRouter();
   const isEdit = !!existingAlert?.id;
@@ -253,8 +257,9 @@ export function AlertFormDialog({
               type="button"
               role="switch"
               aria-checked={form.is_recurring}
+              disabled={userTier === "starter"}
               onClick={() => update("is_recurring", !form.is_recurring)}
-              className={`relative h-5 w-9 rounded-full transition-colors ${
+              className={`relative h-5 w-9 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 form.is_recurring
                   ? "bg-[var(--color-terracotta)]"
                   : "bg-[var(--color-sand)]/20"
@@ -266,9 +271,17 @@ export function AlertFormDialog({
                 }`}
               />
             </button>
-            <Label className="text-sm text-[var(--color-sand)]">
+            <Label className={`text-sm ${userTier === "starter" ? "text-[var(--color-sand-muted)]" : "text-[var(--color-sand)]"}`}>
               Recurring alert
             </Label>
+            {userTier === "starter" && (
+              <Link
+                href="/pricing"
+                className="text-xs font-medium text-[var(--color-terracotta)] hover:text-[var(--color-terracotta-glow)]"
+              >
+                Unlimited only
+              </Link>
+            )}
           </div>
 
           {/* Day picker for recurring */}
