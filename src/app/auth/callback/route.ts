@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPostHogServer } from "@/lib/posthog";
+import { sendWelcomeEmail } from "@/lib/notifications/lifecycle-emails";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest) {
           distinctId: user.id,
           event: isNew ? "user_signed_up" : "user_logged_in",
         });
+        if (isNew && user.email) {
+          sendWelcomeEmail(user.email).catch(console.error);
+        }
       }
       return NextResponse.redirect(`${origin}${next}`);
     }
