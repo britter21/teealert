@@ -34,12 +34,19 @@ interface AlertDefaults {
   recurrence_days?: number[];
 }
 
+interface NotifyChannels {
+  imessage: boolean;
+  email: boolean;
+  push: boolean;
+}
+
 interface Profile {
   email: string;
   phone: string | null;
   notification_phone: string | null;
   tier: string;
   alert_defaults: AlertDefaults;
+  notify_channels: NotifyChannels;
 }
 
 const tierColors: Record<string, string> = {
@@ -78,6 +85,16 @@ export default function SettingsPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [channels, setChannels] = useState<NotifyChannels>({
+    imessage: true,
+    email: true,
+    push: true,
+  });
+  const [savingChannels, setSavingChannels] = useState(false);
+  const [channelsMessage, setChannelsMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [testingPush, setTestingPush] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -113,6 +130,13 @@ export default function SettingsPage() {
       .then((data) => {
         setProfile(data);
         setPhone(data.phone || "");
+        if (data.notify_channels) {
+          setChannels({
+            imessage: data.notify_channels.imessage ?? true,
+            email: data.notify_channels.email ?? true,
+            push: data.notify_channels.push ?? true,
+          });
+        }
         if (data.alert_defaults && Object.keys(data.alert_defaults).length > 0) {
           const d = data.alert_defaults as AlertDefaults;
           setDefaults({
@@ -249,6 +273,34 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleToggleChannel(channel: keyof NotifyChannels) {
+    const updated = { ...channels, [channel]: !channels[channel] };
+    setChannels(updated);
+    setSavingChannels(true);
+    setChannelsMessage(null);
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notify_channels: updated }),
+      });
+      if (!res.ok) {
+        // Revert on failure
+        setChannels(channels);
+        setChannelsMessage({ type: "error", text: "Failed to save." });
+        return;
+      }
+      setChannelsMessage({ type: "success", text: "Saved." });
+      setTimeout(() => setChannelsMessage(null), 2000);
+    } catch {
+      setChannels(channels);
+      setChannelsMessage({ type: "error", text: "Failed to save." });
+    } finally {
+      setSavingChannels(false);
+    }
+  }
+
   async function handleSaveDefaults(e: React.FormEvent) {
     e.preventDefault();
     setSavingDefaults(true);
@@ -354,177 +406,223 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Phone number section */}
-        <form
-          onSubmit={handleSavePhone}
-          className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6"
-        >
+        {/* Notification Channels */}
+        <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6">
           <h2 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
-            Notifications
+            Notification Channels
           </h2>
           <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
-            Set your phone number to receive tee time alerts via iMessage.
+            Choose how you want to be notified when tee times are found.
           </p>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="phone"
-                className="text-sm text-[var(--color-sand-muted)]"
-              >
-                Phone Number
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+1 555 123 4567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)] placeholder:text-[var(--color-sand-muted)]/50 focus-visible:ring-[var(--color-terracotta)]/40"
-              />
-              <p className="text-xs text-[var(--color-sand-muted)]">
-                US numbers only. Used for iMessage alerts when SMS notifications
-                are enabled on an alert.
-              </p>
-            </div>
-
-            {message && (
-              <p
-                className={`text-sm ${
-                  message.type === "success"
-                    ? "text-[var(--color-sage)]"
-                    : "text-[var(--color-terracotta)]"
+            {/* iMessage toggle */}
+            <div className="flex items-center justify-between rounded-lg bg-[var(--color-surface-raised)]/50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-sand)]">iMessage</p>
+                <p className="text-xs text-[var(--color-sand-muted)]">
+                  {profile?.phone ? `Sending to ${profile.phone}` : "No phone number set"}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={channels.imessage}
+                disabled={savingChannels}
+                onClick={() => handleToggleChannel("imessage")}
+                className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
+                  channels.imessage
+                    ? "bg-[var(--color-terracotta)]"
+                    : "bg-[var(--color-sand)]/20"
                 }`}
               >
-                {message.text}
+                <span
+                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                    channels.imessage ? "translate-x-4" : ""
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Phone number input (shown when iMessage is on) */}
+            {channels.imessage && (
+              <form onSubmit={handleSavePhone} className="ml-4 space-y-3 border-l-2 border-[var(--color-sand)]/8 pl-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="phone"
+                    className="text-xs uppercase tracking-wider text-[var(--color-sand-muted)]"
+                  >
+                    Phone Number
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+1 555 123 4567"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="border-[var(--color-sand)]/10 bg-[var(--color-surface-raised)] text-[var(--color-charcoal-text)] placeholder:text-[var(--color-sand-muted)]/50 focus-visible:ring-[var(--color-terracotta)]/40"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={saving}
+                      size="sm"
+                      className="shrink-0 bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)] disabled:opacity-50"
+                    >
+                      {saving ? "..." : "Save"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-[var(--color-sand-muted)]">
+                    US numbers only. Requires an Apple device with iMessage.
+                  </p>
+                </div>
+                {message && (
+                  <p className={`text-xs ${message.type === "success" ? "text-[var(--color-sage)]" : "text-[var(--color-terracotta)]"}`}>
+                    {message.text}
+                  </p>
+                )}
+              </form>
+            )}
+
+            {/* Email toggle */}
+            <div className="flex items-center justify-between rounded-lg bg-[var(--color-surface-raised)]/50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-sand)]">Email</p>
+                <p className="text-xs text-[var(--color-sand-muted)]">
+                  Sending to {profile?.email}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={channels.email}
+                disabled={savingChannels}
+                onClick={() => handleToggleChannel("email")}
+                className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
+                  channels.email
+                    ? "bg-[var(--color-terracotta)]"
+                    : "bg-[var(--color-sand)]/20"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                    channels.email ? "translate-x-4" : ""
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Push toggle */}
+            <div className="flex items-center justify-between rounded-lg bg-[var(--color-surface-raised)]/50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-sand)]">Push Notifications</p>
+                <p className="text-xs text-[var(--color-sand-muted)]">
+                  {!pushSupported
+                    ? "Install the app to your home screen to enable"
+                    : pushSubscribed
+                      ? "Enabled on this device"
+                      : "Not subscribed on this device"}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={channels.push}
+                disabled={savingChannels}
+                onClick={() => handleToggleChannel("push")}
+                className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
+                  channels.push
+                    ? "bg-[var(--color-terracotta)]"
+                    : "bg-[var(--color-sand)]/20"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                    channels.push ? "translate-x-4" : ""
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Push device setup (shown when push is on but not subscribed) */}
+            {channels.push && pushSupported && !pushSubscribed && (
+              <div className="ml-4 border-l-2 border-[var(--color-sand)]/8 pl-4">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={pushLoading}
+                  onClick={handlePushToggle}
+                  className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)] disabled:opacity-50"
+                >
+                  {pushLoading ? "Enabling..." : "Enable on this device"}
+                </Button>
+              </div>
+            )}
+
+            {channels.push && pushSupported && pushSubscribed && (
+              <div className="ml-4 flex items-center gap-2 border-l-2 border-[var(--color-sand)]/8 pl-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={testingPush}
+                  onClick={async () => {
+                    setTestingPush(true);
+                    setPushMessage(null);
+                    try {
+                      const res = await fetch("/api/push/test", { method: "POST" });
+                      if (res.ok) {
+                        setPushMessage({ type: "success", text: "Test sent! Check your device." });
+                      } else {
+                        const data = await res.json();
+                        setPushMessage({ type: "error", text: data.error || "Failed." });
+                      }
+                    } catch {
+                      setPushMessage({ type: "error", text: "Failed." });
+                    } finally {
+                      setTestingPush(false);
+                    }
+                  }}
+                  className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-cream)]"
+                >
+                  {testingPush ? "Sending..." : "Send Test"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={pushLoading}
+                  onClick={handlePushToggle}
+                  className="text-xs text-[var(--color-sand-muted)] hover:text-[var(--color-terracotta)]"
+                >
+                  {pushLoading ? "..." : "Unsubscribe device"}
+                </Button>
+              </div>
+            )}
+
+            {channels.push && !pushSupported && (
+              <div className="ml-4 border-l-2 border-[var(--color-sand)]/8 pl-4">
+                <div className="rounded-lg bg-[var(--color-surface-raised)] p-3">
+                  <p className="text-xs text-[var(--color-sand-muted)]">
+                    To receive push notifications, install this app to your home screen:
+                    tap the share button, then &quot;Add to Home Screen.&quot;
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {pushMessage && (
+              <p className={`text-xs ${pushMessage.type === "success" ? "text-[var(--color-sage)]" : "text-[var(--color-terracotta)]"}`}>
+                {pushMessage.text}
               </p>
             )}
 
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={saving}
-                className="bg-[var(--color-terracotta)] text-white hover:bg-[var(--color-terracotta-glow)] disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save"}
-              </Button>
-            </div>
+            {channelsMessage && (
+              <p className={`text-xs ${channelsMessage.type === "success" ? "text-[var(--color-sage)]" : "text-[var(--color-terracotta)]"}`}>
+                {channelsMessage.text}
+              </p>
+            )}
           </div>
-        </form>
-
-        {/* Push Notifications section */}
-        <div className="rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-6">
-          <h2 className="mb-1 font-[family-name:var(--font-display)] text-lg text-[var(--color-sand-bright)]">
-            Push Notifications
-          </h2>
-          <p className="mb-5 text-sm text-[var(--color-sand-muted)]">
-            Get instant notifications on your device when tee times match your alerts.
-          </p>
-
-          {pushSupported ? (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={pushSubscribed}
-                    disabled={pushLoading}
-                    onClick={handlePushToggle}
-                    className={`relative h-5 w-9 rounded-full transition-colors disabled:opacity-50 ${
-                      pushSubscribed
-                        ? "bg-[var(--color-terracotta)]"
-                        : "bg-[var(--color-sand)]/20"
-                    }`}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                        pushSubscribed ? "translate-x-4" : ""
-                      }`}
-                    />
-                  </button>
-                  <Label className="text-sm text-[var(--color-sand)]">
-                    {pushLoading
-                      ? "Updating..."
-                      : pushSubscribed
-                        ? "Enabled"
-                        : "Disabled"}
-                  </Label>
-                </div>
-                {pushSubscribed && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={testingPush}
-                    onClick={async () => {
-                      setTestingPush(true);
-                      setPushMessage(null);
-                      try {
-                        const res = await fetch("/api/push/test", { method: "POST" });
-                        if (res.ok) {
-                          setPushMessage({ type: "success", text: "Test notification sent! Check your device." });
-                        } else {
-                          const data = await res.json();
-                          setPushMessage({ type: "error", text: data.error || "Failed to send test notification." });
-                        }
-                      } catch {
-                        setPushMessage({ type: "error", text: "Failed to send test notification." });
-                      } finally {
-                        setTestingPush(false);
-                      }
-                    }}
-                    className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-cream)]"
-                  >
-                    {testingPush ? "Sending..." : "Send Test"}
-                  </Button>
-                )}
-              </div>
-
-              {pushMessage && (
-                <p
-                  className={`mt-3 text-sm ${
-                    pushMessage.type === "success"
-                      ? "text-[var(--color-sage)]"
-                      : "text-[var(--color-terracotta)]"
-                  }`}
-                >
-                  {pushMessage.text}
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="rounded-lg bg-[var(--color-surface-raised)] p-4">
-              <p className="text-sm font-medium text-[var(--color-sand)]">
-                Install the app to enable push
-              </p>
-              <p className="mt-2 text-xs text-[var(--color-sand-muted)]">
-                Push notifications require installing this app to your home screen. Here&rsquo;s how:
-              </p>
-              <ol className="mt-3 space-y-2 text-xs text-[var(--color-sand-muted)]">
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">1</span>
-                  <span>Tap the <strong className="text-[var(--color-sand)]">
-                    <svg className="inline h-4 w-4 align-text-bottom text-[var(--color-terracotta)]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
-                    </svg>
-                    {" "}three dots</strong> next to the address bar</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">2</span>
-                  <span>Tap <strong className="text-[var(--color-sand)]">Add to Home Screen</strong></span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">3</span>
-                  <span>Tap <strong className="text-[var(--color-sand)]">Add</strong> in the top right</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-terracotta)]/15 text-[10px] font-semibold text-[var(--color-terracotta)]">4</span>
-                  <span>Open the app from your home screen and come back here to enable push</span>
-                </li>
-              </ol>
-            </div>
-          )}
         </div>
 
         {/* Alert Defaults section */}

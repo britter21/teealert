@@ -19,6 +19,12 @@ export function getNextOccurrence(days: number[]): string | null {
   return null;
 }
 
+interface NotifyChannels {
+  imessage?: boolean;
+  email?: boolean;
+  push?: boolean;
+}
+
 export interface Alert {
   id: string;
   user_id: string;
@@ -34,7 +40,7 @@ export interface Alert {
   notify_push: boolean;
   is_recurring: boolean;
   recurrence_days: number[] | null;
-  user_profiles: { phone: string | null } | null;
+  user_profiles: { phone: string | null; notify_channels: NotifyChannels | null } | null;
 }
 
 export function matchesAlert(t: TeeTime, alert: Alert): boolean {
@@ -64,7 +70,7 @@ export async function matchAndNotify(
 
   const { data: alerts, error: alertError } = await supabase
     .from("alerts")
-    .select("*, user_profiles!alerts_user_profiles_fkey(phone)")
+    .select("*, user_profiles!alerts_user_profiles_fkey(phone, notify_channels)")
     .eq("course_id", courseId)
     .eq("target_date", targetDate)
     .eq("is_active", true)
@@ -135,8 +141,11 @@ export async function matchAndNotify(
       recipient: string;
     }> = [];
 
+    // Account-level channel preferences (default all on)
+    const channels = alert.user_profiles?.notify_channels || { imessage: true, email: true, push: true };
+
     const phone = alert.user_profiles?.phone;
-    if (alert.notify_sms && phone) {
+    if (alert.notify_sms && channels.imessage !== false && phone) {
       notifications.push({
         promise: sendIMessage(phone, courseName, matching, bookingLink, targetDate),
         channel: "imessage",
@@ -144,7 +153,7 @@ export async function matchAndNotify(
       });
     }
 
-    if (alert.notify_email) {
+    if (alert.notify_email && channels.email !== false) {
       const { data: userData } = await supabase.auth.admin.getUserById(
         alert.user_id
       );
@@ -158,7 +167,7 @@ export async function matchAndNotify(
       }
     }
 
-    if (alert.notify_push) {
+    if (alert.notify_push && channels.push !== false) {
       notifications.push({
         promise: sendPushNotifications(
           alert.user_id,
