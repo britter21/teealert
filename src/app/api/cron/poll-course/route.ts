@@ -64,7 +64,7 @@ async function handler(request: Request) {
       );
     }
 
-    // Log successful poll
+    // Log successful poll with full snapshot
     await supabase.from("poll_results").insert({
       course_id: course.id,
       course_name: course.name,
@@ -75,6 +75,7 @@ async function handler(request: Request) {
       new_times_found: newTimes.length,
       notifications_sent: notifications.length,
       duration_ms: Date.now() - start,
+      tee_time_snapshot: times,
     });
 
     return Response.json({
