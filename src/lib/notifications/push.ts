@@ -21,13 +21,21 @@ function formatTime12h(time24: string): string {
   return `${hour12}:${m} ${ampm}`;
 }
 
+function formatDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${days[d.getDay()]}, ${months[month - 1]} ${day}`;
+}
+
 function buildBody(times: TeeTime[]): string {
   return times
     .slice(0, 3)
-    .map(
-      (t) =>
-        `${formatTime12h(t.time)} - ${t.availableSpots < 0 ? "open" : `${t.availableSpots} spots`} | $${t.greenFee}`
-    )
+    .map((t) => {
+      const spots = t.availableSpots < 0 ? "open" : `${t.availableSpots} spot${t.availableSpots !== 1 ? "s" : ""}`;
+      return `${formatTime12h(t.time)} · ${spots} · ${t.holes}h · $${t.greenFee}`;
+    })
     .join("\n");
 }
 
@@ -35,7 +43,8 @@ export async function sendPushNotifications(
   userId: string,
   courseName: string,
   times: TeeTime[],
-  bookingUrl?: string
+  bookingUrl?: string,
+  targetDate?: string
 ): Promise<{ sent: number; failed: number }> {
   const supabase = createServiceClient();
 
@@ -48,9 +57,12 @@ export async function sendPushNotifications(
     return { sent: 0, failed: 0 };
   }
 
+  const dateLabel = targetDate ? ` · ${formatDate(targetDate)}` : "";
+  const extra = times.length > 3 ? `\n+${times.length - 3} more` : "";
+
   const payload = JSON.stringify({
-    title: `Tee times at ${courseName}`,
-    body: buildBody(times),
+    title: `${courseName}${dateLabel}`,
+    body: `${buildBody(times)}${extra}`,
     url: bookingUrl || "/dashboard",
     tag: `alert-${courseName.toLowerCase().replace(/\s+/g, "-")}`,
   });

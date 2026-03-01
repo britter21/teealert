@@ -98,7 +98,7 @@ export async function matchAndNotify(
     const phone = alert.user_profiles?.phone;
     if (alert.notify_sms && phone) {
       notifications.push({
-        promise: sendIMessage(phone, courseName, matching, bookingLink),
+        promise: sendIMessage(phone, courseName, matching, bookingLink, targetDate),
         channel: "imessage",
         recipient: phone,
       });
@@ -112,7 +112,7 @@ export async function matchAndNotify(
       const email = userData?.user?.email;
       if (email) {
         notifications.push({
-          promise: sendAlertEmail(email, courseName, matching, bookingLink),
+          promise: sendAlertEmail(email, courseName, matching, bookingLink, targetDate),
           channel: "email",
           recipient: email,
         });
@@ -125,7 +125,8 @@ export async function matchAndNotify(
           alert.user_id,
           courseName,
           matching,
-          bookingLink
+          bookingLink,
+          targetDate
         ),
         channel: "push",
         recipient: alert.user_id,

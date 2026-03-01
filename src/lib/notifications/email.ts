@@ -14,10 +14,19 @@ function formatTime12h(time24: string): string {
   return `${hour12}:${m} ${ampm}`;
 }
 
+function formatDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${days[d.getDay()]}, ${months[month - 1]} ${day}`;
+}
+
 function buildHtml(
   courseName: string,
   times: TeeTime[],
-  bookingUrl?: string
+  bookingUrl?: string,
+  targetDate?: string
 ): string {
   const top5 = times.slice(0, 5);
 
@@ -60,7 +69,8 @@ function buildHtml(
       <span style="font-size:13px;font-weight:600;letter-spacing:2px;color:#4a9e6a;text-transform:uppercase;">Tee Time Alert</span>
     </div>
     <div style="background:#151f19;border-radius:12px;padding:24px;border:1px solid #1e2b23;">
-      <h2 style="margin:0 0 16px;font-size:20px;color:#e4f0e0;">${courseName}</h2>
+      <h2 style="margin:0 0 4px;font-size:20px;color:#e4f0e0;">${courseName}</h2>
+      ${targetDate ? `<p style="margin:0 0 16px;font-size:14px;color:#6b7d68;">${formatDate(targetDate)} &middot; ${times.length} tee time${times.length !== 1 ? "s" : ""} found</p>` : ""}
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr>
@@ -90,9 +100,11 @@ function buildHtml(
 function buildText(
   courseName: string,
   times: TeeTime[],
-  bookingUrl?: string
+  bookingUrl?: string,
+  targetDate?: string
 ): string {
-  const lines = ["TEE TIME ALERT", courseName, ""];
+  const dateLine = targetDate ? ` — ${formatDate(targetDate)}` : "";
+  const lines = ["TEE TIME ALERT", `${courseName}${dateLine}`, `${times.length} tee time${times.length !== 1 ? "s" : ""} found`, ""];
   for (const t of times.slice(0, 5)) {
     const spots = t.availableSpots < 0 ? "open" : `${t.availableSpots} spots`;
     lines.push(`${formatTime12h(t.time)} - ${spots} | ${t.holes}h | $${t.greenFee}`);
@@ -108,14 +120,16 @@ export async function sendAlertEmail(
   to: string,
   courseName: string,
   times: TeeTime[],
-  bookingUrl?: string
+  bookingUrl?: string,
+  targetDate?: string
 ): Promise<{ id: string }> {
+  const datePart = targetDate ? ` on ${formatDate(targetDate)}` : "";
   const { data, error } = await resend.emails.send({
     from: `${FROM_NAME} <${FROM_EMAIL}>`,
     to,
-    subject: `Tee times available at ${courseName}`,
-    html: buildHtml(courseName, times, bookingUrl),
-    text: buildText(courseName, times, bookingUrl),
+    subject: `${times.length} tee time${times.length !== 1 ? "s" : ""} at ${courseName}${datePart}`,
+    html: buildHtml(courseName, times, bookingUrl, targetDate),
+    text: buildText(courseName, times, bookingUrl, targetDate),
   });
 
   if (error) {
