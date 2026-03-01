@@ -395,6 +395,30 @@ function monitoringStatus(alert: Alert): string | null {
   return null;
 }
 
+function formatLeadDays(alert: Alert): string | null {
+  if (!alert.start_monitoring_date || !alert.target_date) return null;
+  if (alert.is_recurring) return null;
+  const diff = Math.round(
+    (new Date(alert.target_date).getTime() -
+      new Date(alert.start_monitoring_date).getTime()) /
+      86400000
+  );
+  if (diff <= 0) return "Immediately";
+  if (diff === 7) return "1 week before";
+  if (diff === 14) return "2 weeks before";
+  return `${diff}d before`;
+}
+
+function formatLookAhead(alert: Alert): string | null {
+  if (!alert.is_recurring) return null;
+  const days = alert.recurrence_window_days || 30;
+  if (days === 30) return "30 days";
+  if (days === 14) return "2 weeks";
+  if (days === 60) return "60 days";
+  if (days === 90) return "90 days";
+  return `${days} days`;
+}
+
 function AlertCard({
   alert,
   onDelete,
@@ -409,6 +433,8 @@ function AlertCard({
   const course = alert.courses;
   const recurrence = formatRecurrence(alert.recurrence_days);
   const monitoring = monitoringStatus(alert);
+  const leadDays = formatLeadDays(alert);
+  const lookAhead = formatLookAhead(alert);
 
   return (
     <div className="course-card flex flex-col rounded-xl border border-[var(--color-sand)]/8 bg-[var(--color-surface)] p-5">
@@ -464,19 +490,35 @@ function AlertCard({
 
       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         {alert.is_recurring ? (
-          <div className="col-span-2">
-            <span className="text-[var(--color-sand-muted)]">Schedule: </span>
-            <span className="text-[var(--color-charcoal-text)]">
-              {recurrence || "No days selected"}
-            </span>
-          </div>
+          <>
+            <div>
+              <span className="text-[var(--color-sand-muted)]">Schedule: </span>
+              <span className="text-[var(--color-charcoal-text)]">
+                {recurrence || "No days selected"}
+              </span>
+            </div>
+            {lookAhead && (
+              <div>
+                <span className="text-[var(--color-sand-muted)]">Look ahead: </span>
+                <span className="text-[var(--color-charcoal-text)]">{lookAhead}</span>
+              </div>
+            )}
+          </>
         ) : (
-          <div>
-            <span className="text-[var(--color-sand-muted)]">Date: </span>
-            <span className="text-[var(--color-charcoal-text)]">
-              {formatDateWithDow(alert.target_date)}
-            </span>
-          </div>
+          <>
+            <div>
+              <span className="text-[var(--color-sand-muted)]">Date: </span>
+              <span className="text-[var(--color-charcoal-text)]">
+                {formatDateWithDow(alert.target_date)}
+              </span>
+            </div>
+            {leadDays && (
+              <div>
+                <span className="text-[var(--color-sand-muted)]">Monitor: </span>
+                <span className="text-[var(--color-charcoal-text)]">{leadDays}</span>
+              </div>
+            )}
+          </>
         )}
         <div>
           <span className="text-[var(--color-sand-muted)]">Players: </span>
