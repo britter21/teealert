@@ -335,6 +335,54 @@ describe("ForeUp poller", () => {
 
     await expect(pollForeUp(foreupCourse(), "03-07-2026")).rejects.toThrow("ForeUp 500");
   });
+
+  it("retries without booking_class on 401 (restricted booking class)", async () => {
+    let callCount = 0;
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      callCount++;
+      if (callCount === 1) {
+        // First call with booking_class returns 401
+        expect(url).toContain("booking_class=11345");
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: () =>
+            Promise.resolve({
+              success: false,
+              msg: "You do not have permissions to use this booking class.",
+            }),
+          text: () =>
+            Promise.resolve(
+              '{"success":false,"msg":"You do not have permissions to use this booking class."}'
+            ),
+        });
+      }
+      // Retry without booking_class succeeds
+      expect(url).not.toContain("booking_class");
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(FOREUP_RESPONSE),
+        text: () => Promise.resolve(JSON.stringify(FOREUP_RESPONSE)),
+      });
+    });
+
+    const { pollForeUp } = await import("../pollers/foreup");
+    const result = await pollForeUp(foreupCourse(), "03-07-2026");
+
+    expect(callCount).toBe(2);
+    expect(result).toHaveLength(3);
+    expect(result[0].time).toBe("07:00");
+  });
+
+  it("still throws on 401 when no booking_class is set", async () => {
+    mockFetch("Unauthorized", 401);
+    const { pollForeUp } = await import("../pollers/foreup");
+
+    await expect(
+      pollForeUp(foreupCourse({ platform_booking_class: null }), "03-07-2026")
+    ).rejects.toThrow("ForeUp 401");
+  });
 });
 
 // ═══════════════════════════════════════════════════════════

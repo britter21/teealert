@@ -27,10 +27,22 @@ export async function pollForeUp(
     params.set("schedule_ids[]", course.platform_schedule_id);
   }
 
-  const resp = await fetch(`${FOREUP_BASE}?${params}`, {
+  let resp = await fetch(`${FOREUP_BASE}?${params}`, {
     headers: { "User-Agent": course.ua_override || IPHONE_UA },
     cache: "no-store",
   });
+
+  // If a booking class returns 401 (restricted/auth-required), retry without it
+  if (resp.status === 401 && course.platform_booking_class) {
+    console.warn(
+      `ForeUp 401 for booking_class ${course.platform_booking_class} on ${course.name} -- retrying without booking class`
+    );
+    params.delete("booking_class");
+    resp = await fetch(`${FOREUP_BASE}?${params}`, {
+      headers: { "User-Agent": course.ua_override || IPHONE_UA },
+      cache: "no-store",
+    });
+  }
 
   if (!resp.ok) {
     throw new Error(`ForeUp ${resp.status}: ${await resp.text()}`);

@@ -46,6 +46,12 @@ Linear is the source of truth for project work. Keep it thorough and up to date 
 - `platform_schedule_id` stores the **course_id** (used to filter tee times)
 - `platform_booking_class` stores the **affiliation_type_id** (used for pricing/access)
 
+## Booking Class Resilience
+- `platform_booking_class` values come from upstream platforms and can break at any time (e.g., courses restricting booking classes to require authentication)
+- The ForeUp poller auto-retries without `booking_class` on 401 errors -- polls still succeed but without booking-class-specific pricing
+- When investigating poll errors, check if the `platform_booking_class` is still valid by curling the platform API directly
+- Fix: update `platform_booking_class` in the `courses` table via Supabase REST API, or set to NULL to poll without a booking class
+
 ## Deployment
 - Push to `main` triggers Vercel deploy automatically.
 - Supabase migrations: `supabase db push --project-ref gqhgkwqadwzrwcqdqbly`
