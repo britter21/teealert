@@ -1,4 +1,7 @@
 -- Remove booking_window_days from search_courses_nearby return type
+-- Must drop first because return type is changing
+DROP FUNCTION IF EXISTS search_courses_nearby(double precision, double precision, double precision, double precision, text, int, int);
+
 CREATE OR REPLACE FUNCTION search_courses_nearby(
   search_lat double precision,
   search_lng double precision,
