@@ -5,7 +5,6 @@ import posthog from "posthog-js";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface CourseRow {
   id: string;
@@ -14,7 +13,6 @@ interface CourseRow {
   location_city: string | null;
   location_state: string | null;
   timezone: string;
-  booking_window_days: number | null;
   is_active: boolean;
   distance_miles?: number;
 }
@@ -335,16 +333,6 @@ export default function CoursesPage() {
                     )}
                   </p>
 
-                  <div className="mt-auto flex flex-wrap gap-2">
-                    {course.booking_window_days && (
-                      <Badge
-                        variant="outline"
-                        className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
-                      >
-                        {course.booking_window_days}-day window
-                      </Badge>
-                    )}
-                  </div>
                 </div>
               </Link>
             ))}

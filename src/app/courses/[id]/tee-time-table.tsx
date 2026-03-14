@@ -46,10 +46,9 @@ interface Props {
   platformCourseId: string;
   platformScheduleId?: string | null;
   bookingSlug?: string | null;
-  bookingWindowDays?: number | null;
 }
 
-export function TeeTimeTable({ courseId, courseName, defaultDate, platform, platformCourseId, platformScheduleId, bookingSlug, bookingWindowDays }: Props) {
+export function TeeTimeTable({ courseId, courseName, defaultDate, platform, platformCourseId, platformScheduleId, bookingSlug }: Props) {
   const [date, setDate] = useState(defaultDate);
   const [times, setTimes] = useState<TeeTime[]>([]);
   const [loading, setLoading] = useState(false);
@@ -200,7 +199,6 @@ export function TeeTimeTable({ courseId, courseName, defaultDate, platform, plat
           <CreateAlertButton
             courseId={courseId}
             courseName={courseName}
-            bookingWindowDays={bookingWindowDays}
             defaultDate={date}
           />
         </div>

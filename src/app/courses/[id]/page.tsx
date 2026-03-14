@@ -37,14 +37,6 @@ export default async function CourseDetailPage({ params }: Props) {
               .join(", ")}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {course.booking_window_days && (
-              <Badge
-                variant="outline"
-                className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
-              >
-                {course.booking_window_days}-day booking window
-              </Badge>
-            )}
             <Badge
               variant="outline"
               className="border-[var(--color-sand)]/10 text-xs text-[var(--color-sand-muted)]"
@@ -63,7 +55,6 @@ export default async function CourseDetailPage({ params }: Props) {
         platformCourseId={course.platform_course_id}
         platformScheduleId={course.platform_schedule_id}
         bookingSlug={course.booking_slug}
-        bookingWindowDays={course.booking_window_days}
       />
     </div>
   );

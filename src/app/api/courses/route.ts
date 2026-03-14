@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from("courses")
     .select(
-      "id, name, platform, location_city, location_state, timezone, booking_window_days, is_active, latitude, longitude",
+      "id, name, platform, location_city, location_state, timezone, is_active, latitude, longitude",
       { count: "exact" }
     )
     .eq("is_active", true);

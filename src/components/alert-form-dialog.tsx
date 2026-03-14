@@ -64,7 +64,6 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   courseId: string;
   courseName: string;
-  bookingWindowDays?: number | null;
   defaultDate?: string;
   /** Pre-fetched user defaults so we don't fetch on every dialog open */
   userDefaults?: AlertDefaults | null;
@@ -80,7 +79,6 @@ export function AlertFormDialog({
   onOpenChange,
   courseId,
   courseName,
-  bookingWindowDays,
   defaultDate: defaultDateProp,
   userDefaults,
   existingAlert,
@@ -102,7 +100,7 @@ export function AlertFormDialog({
     latest_time: "18:00",
     min_players: "4",
     max_price: "",
-    lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
+    lead_days: "",
     lead_days_custom: "",
     is_recurring: false,
     recurrence_days: [] as number[],
@@ -168,7 +166,7 @@ export function AlertFormDialog({
           latest_time: d.latest_time || "18:00",
           min_players: d.min_players ? String(d.min_players) : "4",
           max_price: d.max_price != null ? String(d.max_price) : "",
-          lead_days: d.lead_days != null ? d.lead_days : (bookingWindowDays ? String(bookingWindowDays) : ""),
+          lead_days: d.lead_days != null ? d.lead_days : "",
           lead_days_custom: "",
           is_recurring: d.is_recurring ?? false,
           recurrence_days: d.recurrence_days?.length ? d.recurrence_days : [],
@@ -182,7 +180,7 @@ export function AlertFormDialog({
           latest_time: "18:00",
           min_players: "4",
           max_price: "",
-          lead_days: bookingWindowDays ? String(bookingWindowDays) : "",
+          lead_days: "",
           lead_days_custom: "",
           is_recurring: false,
           recurrence_days: [],
@@ -191,7 +189,7 @@ export function AlertFormDialog({
         });
       }
     }
-  }, [existingAlert, defaultDate, defaultDateProp, open, bookingWindowDays, userDefaults]);
+  }, [existingAlert, defaultDate, defaultDateProp, open, userDefaults]);
 
   function update(field: string, value: string | boolean | number[]) {
     setForm((prev) => ({ ...prev, [field]: value }));
