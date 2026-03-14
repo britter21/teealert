@@ -107,7 +107,7 @@ async function simulatePipeline(
   userAlert: Alert
 ): Promise<TeeTime[]> {
   // Step 1: diff against Redis cache (uses real diffAndDetectNew)
-  const newTimes = await diffAndDetectNew(courseId, date, polledTimes);
+  const { newTimes } = await diffAndDetectNew(courseId, date, polledTimes);
 
   // Step 2: match against alert criteria (uses real matchesAlert)
   return newTimes.filter((t) => matchesAlert(t, userAlert));
@@ -369,7 +369,7 @@ describe("Scenario: Multiple alerts on same course+date (multi-user isolation)",
     });
 
     // Diff is shared (same course+date) — all times are "new"
-    const newTimes = await diffAndDetectNew("course-1", "2026-03-07", polled);
+    const { newTimes } = await diffAndDetectNew("course-1", "2026-03-07", polled);
     expect(newTimes).toHaveLength(4);
 
     // But each user's alert only matches their criteria

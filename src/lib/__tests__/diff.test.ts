@@ -48,8 +48,9 @@ describe("diffAndDetectNew", () => {
       teeTime({ time: "08:00" }),
     ];
 
-    const result = await diffAndDetectNew("course-1", "2026-03-07", times);
-    expect(result).toHaveLength(2);
+    const { newTimes, changed } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(2);
+    expect(changed).toBe(true);
   });
 
   it("filters out previously seen times", async () => {
@@ -59,9 +60,9 @@ describe("diffAndDetectNew", () => {
       teeTime({ time: "08:00", holes: 18, availableSpots: 4 }),
     ];
 
-    const result = await diffAndDetectNew("course-1", "2026-03-07", times);
-    expect(result).toHaveLength(1);
-    expect(result[0].time).toBe("08:00");
+    const { newTimes } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(1);
+    expect(newTimes[0].time).toBe("08:00");
   });
 
   it("treats changed availableSpots as new (same time, different spots)", async () => {
@@ -69,15 +70,15 @@ describe("diffAndDetectNew", () => {
     mockSmembers.mockResolvedValue(["08:30|18|3"]);
     const times = [teeTime({ time: "08:30", holes: 18, availableSpots: 4 })];
 
-    const result = await diffAndDetectNew("course-1", "2026-03-07", times);
-    expect(result).toHaveLength(1);
+    const { newTimes } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(1);
   });
 
   it("does NOT update cache when current times are empty", async () => {
     mockSmembers.mockResolvedValue(["08:30|18|4"]);
 
-    const result = await diffAndDetectNew("course-1", "2026-03-07", []);
-    expect(result).toHaveLength(0);
+    const { newTimes } = await diffAndDetectNew("course-1", "2026-03-07", []);
+    expect(newTimes).toHaveLength(0);
     // Pipeline should NOT be created — cache preserved
     expect(mockDel).not.toHaveBeenCalled();
   });
@@ -111,21 +112,44 @@ describe("diffAndDetectNew", () => {
     mockSmembers.mockResolvedValue(["08:30|18|4"]);
     const times = [teeTime({ time: "08:30", holes: 18, availableSpots: 4 })];
 
-    const result = await diffAndDetectNew("course-1", "2026-03-07", times);
-    expect(result).toHaveLength(0); // exact match → not new
+    const { newTimes, changed } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(0); // exact match → not new
+    expect(changed).toBe(false);
   });
 
   it("handles Chronogolf unknown spots (-1)", async () => {
     mockSmembers.mockResolvedValue([]);
     const times = [teeTime({ availableSpots: -1 })];
 
-    const result = await diffAndDetectNew("course-1", "2026-03-07", times);
-    expect(result).toHaveLength(1);
+    const { newTimes } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(1);
 
     // Verify the key includes -1
     expect(mockSadd).toHaveBeenCalledWith(
       expect.any(String),
       "08:30|18|-1"
     );
+  });
+
+  it("detects departures as changed", async () => {
+    // Previously had two times, now only one → departure detected
+    mockSmembers.mockResolvedValue(["07:00|18|4", "08:00|18|4"]);
+    const times = [teeTime({ time: "07:00", holes: 18, availableSpots: 4 })];
+
+    const { newTimes, changed } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(0); // no new arrivals
+    expect(changed).toBe(true); // but 08:00 departed
+  });
+
+  it("reports unchanged when identical to previous", async () => {
+    mockSmembers.mockResolvedValue(["07:00|18|4", "08:00|18|2"]);
+    const times = [
+      teeTime({ time: "07:00", holes: 18, availableSpots: 4 }),
+      teeTime({ time: "08:00", holes: 18, availableSpots: 2 }),
+    ];
+
+    const { newTimes, changed } = await diffAndDetectNew("course-1", "2026-03-07", times);
+    expect(newTimes).toHaveLength(0);
+    expect(changed).toBe(false);
   });
 });

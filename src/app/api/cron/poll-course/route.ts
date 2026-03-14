@@ -48,7 +48,7 @@ async function handler(request: Request) {
 
   try {
     const times = await pollCourse(course as Course, date);
-    const newTimes = await diffAndDetectNew(course.id, date, times);
+    const { newTimes, changed } = await diffAndDetectNew(course.id, date, times);
 
     let notifications: { alertId: string; matched: number }[] = [];
     if (newTimes.length > 0) {
@@ -64,7 +64,7 @@ async function handler(request: Request) {
       );
     }
 
-    // Log successful poll — only include snapshot when changes detected
+    // Log successful poll — include snapshot when availability changed (arrivals or departures)
     await supabase.from("poll_results").insert({
       course_id: course.id,
       course_name: course.name,
@@ -75,7 +75,7 @@ async function handler(request: Request) {
       new_times_found: newTimes.length,
       notifications_sent: notifications.length,
       duration_ms: Date.now() - start,
-      tee_time_snapshot: newTimes.length > 0 ? times : null,
+      tee_time_snapshot: changed ? times : null,
     });
 
     return Response.json({

@@ -1,11 +1,16 @@
 import { getRedis } from "./redis";
 import type { TeeTime } from "./pollers/types";
 
+export interface DiffResult {
+  newTimes: TeeTime[];
+  changed: boolean;
+}
+
 export async function diffAndDetectNew(
   courseId: string,
   targetDate: string,
   currentTimes: TeeTime[]
-): Promise<TeeTime[]> {
+): Promise<DiffResult> {
   const cacheKey = `teetimes:${courseId}:${targetDate}`;
 
   const redis = getRedis();
@@ -18,9 +23,15 @@ export async function diffAndDetectNew(
   const currentKeys = currentTimes.map(
     (t) => `${t.time}|${t.holes}|${t.availableSpots}`
   );
+  const currentSet = new Set(currentKeys);
   const newTimes = currentTimes.filter(
     (_t, i) => !previousSet.has(currentKeys[i])
   );
+
+  // Detect any change: arrivals (new times) or departures (removed times)
+  const hasArrivals = newTimes.length > 0;
+  const hasDepartures = previous.some((key) => !currentSet.has(key));
+  const changed = hasArrivals || hasDepartures;
 
   // Update cache atomically (TTL = 2 * typical poll interval)
   if (currentKeys.length > 0) {
@@ -31,5 +42,5 @@ export async function diffAndDetectNew(
     await pipeline.exec();
   }
 
-  return newTimes;
+  return { newTimes, changed };
 }
